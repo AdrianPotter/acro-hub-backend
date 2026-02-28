@@ -5,7 +5,7 @@ resource "aws_api_gateway_rest_api" "acro_hub" {
   description = "Acro Hub backend REST API"
 
   endpoint_configuration {
-    types = ["EDGE"]
+    types = ["REGIONAL"]
   }
 }
 
@@ -107,7 +107,7 @@ resource "aws_api_gateway_integration" "auth_login_post" {
   http_method             = aws_api_gateway_method.auth_login_post.http_method
   integration_http_method = "POST"
   type                    = "AWS_PROXY"
-  uri                     = "arn:aws:apigateway:${var.aws_region}:lambda:path/2015-03-31/functions/${aws_lambda_function.auth.arn}:$${stageVariables.authHandler}/invocations"
+  uri                     = "arn:aws:apigateway:${var.aws_region}:lambda:path/2015-03-31/functions/${aws_lambda_function.auth.arn}/invocations"
 }
 
 # ── /auth/login OPTIONS (CORS) ────────────────────────────────────────────────

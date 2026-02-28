@@ -7,7 +7,7 @@ import json
 import os
 import sys
 import unittest
-from unittest.mock import MagicMock, patch, PropertyMock
+from unittest.mock import MagicMock, patch
 
 _MOVES_PATH = os.path.join(os.path.dirname(__file__), "..", "lambdas", "moves", "handler.py")
 _spec = importlib.util.spec_from_file_location("moves_handler", _MOVES_PATH)
