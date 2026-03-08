@@ -25,6 +25,38 @@ resource "aws_cloudwatch_log_group" "api_gateway" {
   retention_in_days = 7
 }
 
+# ── API Gateway CloudWatch Logs Role ───────────────────────────────────────────
+
+resource "aws_iam_role" "apigw_cloudwatch" {
+  name = "${var.app_name}-apigw-cw-${var.environment}"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Principal = {
+          Service = "apigateway.amazonaws.com"
+        }
+        Action = "sts:AssumeRole"
+      }
+    ]
+  })
+}
+
+resource "aws_iam_role_policy_attachment" "apigw_cloudwatch" {
+  role       = aws_iam_role.apigw_cloudwatch.name
+  policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonAPIGatewayPushToCloudWatchLogs"
+}
+
+resource "aws_api_gateway_account" "acro_hub" {
+  cloudwatch_role_arn = aws_iam_role.apigw_cloudwatch.arn
+
+  depends_on = [
+    aws_iam_role_policy_attachment.apigw_cloudwatch
+  ]
+}
+
 # ── Dashboard ─────────────────────────────────────────────────────────────────
 
 resource "aws_cloudwatch_dashboard" "acro_hub" {
@@ -40,9 +72,11 @@ resource "aws_cloudwatch_dashboard" "acro_hub" {
         width  = 12
         height = 6
         properties = {
-          title  = "Lambda Invocations"
-          period = 300
-          stat   = "Sum"
+          title       = "Lambda Invocations"
+          region      = var.aws_region
+          annotations = {}
+          period      = 300
+          stat        = "Sum"
           metrics = [
             ["AWS/Lambda", "Invocations", "FunctionName", "${var.app_name}-auth-${var.environment}", { label = "auth" }],
             ["AWS/Lambda", "Invocations", "FunctionName", "${var.app_name}-moves-${var.environment}", { label = "moves" }],
@@ -60,9 +94,11 @@ resource "aws_cloudwatch_dashboard" "acro_hub" {
         width  = 12
         height = 6
         properties = {
-          title  = "Lambda Errors"
-          period = 300
-          stat   = "Sum"
+          title       = "Lambda Errors"
+          region      = var.aws_region
+          annotations = {}
+          period      = 300
+          stat        = "Sum"
           metrics = [
             ["AWS/Lambda", "Errors", "FunctionName", "${var.app_name}-auth-${var.environment}", { label = "auth", color = "#d62728" }],
             ["AWS/Lambda", "Errors", "FunctionName", "${var.app_name}-moves-${var.environment}", { label = "moves", color = "#ff7f0e" }],
@@ -80,9 +116,11 @@ resource "aws_cloudwatch_dashboard" "acro_hub" {
         width  = 12
         height = 6
         properties = {
-          title  = "API Gateway 4xx Errors"
-          period = 300
-          stat   = "Sum"
+          title       = "API Gateway 4xx Errors"
+          region      = var.aws_region
+          annotations = {}
+          period      = 300
+          stat        = "Sum"
           metrics = [
             ["AWS/ApiGateway", "4XXError", "ApiName", "${var.app_name}-api-${var.environment}", "Stage", var.environment],
           ]
@@ -97,9 +135,11 @@ resource "aws_cloudwatch_dashboard" "acro_hub" {
         width  = 12
         height = 6
         properties = {
-          title  = "API Gateway 5xx Errors"
-          period = 300
-          stat   = "Sum"
+          title       = "API Gateway 5xx Errors"
+          region      = var.aws_region
+          annotations = {}
+          period      = 300
+          stat        = "Sum"
           metrics = [
             ["AWS/ApiGateway", "5XXError", "ApiName", "${var.app_name}-api-${var.environment}", "Stage", var.environment],
           ]
@@ -114,9 +154,11 @@ resource "aws_cloudwatch_dashboard" "acro_hub" {
         width  = 24
         height = 6
         properties = {
-          title  = "DynamoDB Consumed Read/Write Capacity"
-          period = 300
-          stat   = "Sum"
+          title       = "DynamoDB Consumed Read/Write Capacity"
+          region      = var.aws_region
+          annotations = {}
+          period      = 300
+          stat        = "Sum"
           metrics = [
             ["AWS/DynamoDB", "ConsumedReadCapacityUnits", "TableName", "${var.app_name}-moves-${var.environment}", { label = "moves reads" }],
             ["AWS/DynamoDB", "ConsumedWriteCapacityUnits", "TableName", "${var.app_name}-moves-${var.environment}", { label = "moves writes" }],

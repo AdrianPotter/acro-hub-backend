@@ -25,5 +25,5 @@ output "videos_bucket_name" {
 
 output "route53_name_servers" {
   description = "Name servers for the Route 53 hosted zone (add these to your domain registrar)"
-  value       = aws_route53_zone.acro_hub.name_servers
+  value       = data.aws_route53_zone.acro_hub.name_servers
 }

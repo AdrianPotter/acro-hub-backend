@@ -7,13 +7,13 @@ variable "aws_region" {
 variable "environment" {
   description = "Deployment environment (dev, staging, prod)"
   type        = string
-  default     = "dev"
+  default     = "prod"
 }
 
 variable "domain_name" {
   description = "Root domain name for the project"
   type        = string
-  default     = "acrohub.dance"
+  default     = "acrohub.org"
 }
 
 variable "app_name" {
@@ -25,11 +25,11 @@ variable "app_name" {
 variable "cognito_callback_urls" {
   description = "List of allowed OAuth callback URLs for the Cognito app client"
   type        = list(string)
-  default     = ["https://acrohub.dance/callback"]
+  default     = ["https://acrohub.org/callback"]
 }
 
 variable "cognito_logout_urls" {
   description = "List of allowed OAuth logout URLs for the Cognito app client"
   type        = list(string)
-  default     = ["https://acrohub.dance"]
+  default     = ["https://acrohub.org"]
 }

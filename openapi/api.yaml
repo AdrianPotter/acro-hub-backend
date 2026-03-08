@@ -8,10 +8,10 @@ info:
   version: "1.0.0"
   contact:
     name: Acro Hub
-    url: https://acrohub.dance
+    url: https://acrohub.org
 
 servers:
-  - url: https://api.acrohub.dance
+  - url: https://api.acrohub.org
     description: Production
 
 security: []

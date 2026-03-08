@@ -30,6 +30,6 @@ Create the repository with the code needed to complete these functions based on 
 | Event tracking         | DynamoDB events table  |
 | Operational monitoring | CloudWatch             |
 
-APIs should be accessed via API gateway and route 53 should be used for DNS using a generic test domain e.g. acrohub.dance to begin with that will be confirmed later. Terraform should be used for deploying the infrastructure. Generate OpenAPI specifications for all APIs to make future modification easier and cover all Python codes with unit tests
+APIs should be accessed via API gateway and route 53 should be used for DNS using a generic test domain e.g. acrohub.org to begin with that will be confirmed later. Terraform should be used for deploying the infrastructure. Generate OpenAPI specifications for all APIs to make future modification easier and cover all Python codes with unit tests
 
 Put this prompt into a PROMPT.MD markup file to make it easier to review this later. The README.MD should have instructions for local run and tests along with deployment. Update the .gitignore based on the tech stack and based on using PyCharm as the IDE.

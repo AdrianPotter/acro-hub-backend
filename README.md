@@ -8,7 +8,7 @@ Backend API for [Acro Hub](https://github.com/AdrianPotter/acro-hub-frontend) �
                         ┌─────────────────────────────────────────────────┐
                         │                   AWS Cloud                      │
                         │                                                  │
-  Browser / SPA  ──────▶│  Route 53 (api.acrohub.dance)                   │
+  Browser / SPA  ──────▶│  Route 53 (api.acrohub.org)                   │
                         │       │                                          │
                         │       ▼                                          │
                         │  API Gateway (REST)                              │
@@ -157,15 +157,17 @@ aws s3api put-bucket-versioning \
 
 Each Lambda is deployed as a zip archive. Package them before `terraform apply`:
 
-```bash
-for svc in auth moves videos events; do
+**Windows (PowerShell):**
+
+```powershell
+foreach ($svc in @("auth", "moves", "videos", "events")) {
   cd lambdas/$svc
   pip install -r requirements.txt -t package/
-  cp handler.py package/
-  cd package && zip -r ../function.zip . && cd ..
-  rm -rf package
+  Copy-Item handler.py package/
+  Compress-Archive -Path package/* -DestinationPath function.zip -Force
+  Remove-Item -Recurse -Force package
   cd ../..
-done
+}
 ```
 
 ### Terraform init / plan / apply
@@ -206,7 +208,7 @@ Replace `<TOKEN>` with a valid Cognito JWT obtained after login.
 ### Register a new user
 
 ```bash
-curl -X POST https://api.acrohub.dance/auth/register \
+curl -X POST https://api.acrohub.org/auth/register \
   -H "Content-Type: application/json" \
   -d '{"email":"user@example.com","password":"Password1!","name":"Jane Doe"}'
 ```
@@ -214,7 +216,7 @@ curl -X POST https://api.acrohub.dance/auth/register \
 ### Login
 
 ```bash
-curl -X POST https://api.acrohub.dance/auth/login \
+curl -X POST https://api.acrohub.org/auth/login \
   -H "Content-Type: application/json" \
   -d '{"email":"user@example.com","password":"Password1!"}'
 ```
@@ -222,21 +224,21 @@ curl -X POST https://api.acrohub.dance/auth/login \
 ### List moves (authenticated)
 
 ```bash
-curl https://api.acrohub.dance/moves \
+curl https://api.acrohub.org/moves \
   -H "Authorization: Bearer <TOKEN>"
 ```
 
 ### Get a single move
 
 ```bash
-curl https://api.acrohub.dance/moves/<moveId> \
+curl https://api.acrohub.org/moves/<moveId> \
   -H "Authorization: Bearer <TOKEN>"
 ```
 
 ### Create a move
 
 ```bash
-curl -X POST https://api.acrohub.dance/moves \
+curl -X POST https://api.acrohub.org/moves \
   -H "Authorization: Bearer <TOKEN>" \
   -H "Content-Type: application/json" \
   -d '{
@@ -251,14 +253,14 @@ curl -X POST https://api.acrohub.dance/moves \
 ### Get a pre-signed video URL
 
 ```bash
-curl "https://api.acrohub.dance/videos/<moveId>/url" \
+curl "https://api.acrohub.org/videos/<moveId>/url" \
   -H "Authorization: Bearer <TOKEN>"
 ```
 
 ### Get a pre-signed upload URL
 
 ```bash
-curl -X POST "https://api.acrohub.dance/videos/<moveId>/upload-url" \
+curl -X POST "https://api.acrohub.org/videos/<moveId>/upload-url" \
   -H "Authorization: Bearer <TOKEN>"
 ```
 
@@ -273,7 +275,7 @@ curl -X PUT "<uploadUrl>" \
 ### Track an event
 
 ```bash
-curl -X POST https://api.acrohub.dance/events \
+curl -X POST https://api.acrohub.org/events \
   -H "Authorization: Bearer <TOKEN>" \
   -H "Content-Type: application/json" \
   -d '{"eventType":"move_view","resourceId":"<moveId>"}'
@@ -287,10 +289,10 @@ All tuneable Terraform inputs live in `terraform/variables.tf`. The most common 
 |---|---|---|
 | `aws_region` | `eu-west-1` | AWS region for all resources |
 | `environment` | `dev` | Deployment environment tag |
-| `domain_name` | `acrohub.dance` | Root domain for Route 53 |
+| `domain_name` | `acrohub.org` | Root domain for Route 53 |
 | `app_name` | `acro-hub` | Prefix for resource names |
-| `cognito_callback_urls` | `["https://acrohub.dance/callback"]` | OAuth callback URLs |
-| `cognito_logout_urls` | `["https://acrohub.dance"]` | OAuth logout URLs |
+| `cognito_callback_urls` | `["https://acrohub.org/callback"]` | OAuth callback URLs |
+| `cognito_logout_urls` | `["https://acrohub.org"]` | OAuth logout URLs |
 
 Pass overrides at apply time or create a `terraform.tfvars` file (git-ignored by default).
 

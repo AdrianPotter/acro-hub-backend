@@ -148,6 +148,10 @@ resource "aws_api_gateway_integration_response" "auth_login_options" {
   http_method = aws_api_gateway_method.auth_login_options.http_method
   status_code = aws_api_gateway_method_response.auth_login_options_200.status_code
 
+  depends_on = [
+    aws_api_gateway_integration.auth_login_options
+  ]
+
   response_parameters = {
     "method.response.header.Access-Control-Allow-Headers" = "'Content-Type,Authorization'"
     "method.response.header.Access-Control-Allow-Methods" = "'OPTIONS,POST'"
@@ -208,6 +212,10 @@ resource "aws_api_gateway_integration_response" "auth_logout_options" {
   resource_id = aws_api_gateway_resource.auth_logout.id
   http_method = aws_api_gateway_method.auth_logout_options.http_method
   status_code = aws_api_gateway_method_response.auth_logout_options_200.status_code
+
+  depends_on = [
+    aws_api_gateway_integration.auth_logout_options
+  ]
 
   response_parameters = {
     "method.response.header.Access-Control-Allow-Headers" = "'Content-Type,Authorization'"
@@ -270,6 +278,10 @@ resource "aws_api_gateway_integration_response" "auth_register_options" {
   http_method = aws_api_gateway_method.auth_register_options.http_method
   status_code = aws_api_gateway_method_response.auth_register_options_200.status_code
 
+  depends_on = [
+    aws_api_gateway_integration.auth_register_options
+  ]
+
   response_parameters = {
     "method.response.header.Access-Control-Allow-Headers" = "'Content-Type,Authorization'"
     "method.response.header.Access-Control-Allow-Methods" = "'OPTIONS,POST'"
@@ -331,6 +343,10 @@ resource "aws_api_gateway_integration_response" "auth_forgot_options" {
   http_method = aws_api_gateway_method.auth_forgot_options.http_method
   status_code = aws_api_gateway_method_response.auth_forgot_options_200.status_code
 
+  depends_on = [
+    aws_api_gateway_integration.auth_forgot_options
+  ]
+
   response_parameters = {
     "method.response.header.Access-Control-Allow-Headers" = "'Content-Type,Authorization'"
     "method.response.header.Access-Control-Allow-Methods" = "'OPTIONS,POST'"
@@ -391,6 +407,10 @@ resource "aws_api_gateway_integration_response" "auth_confirm_options" {
   resource_id = aws_api_gateway_resource.auth_confirm_password.id
   http_method = aws_api_gateway_method.auth_confirm_options.http_method
   status_code = aws_api_gateway_method_response.auth_confirm_options_200.status_code
+
+  depends_on = [
+    aws_api_gateway_integration.auth_confirm_options
+  ]
 
   response_parameters = {
     "method.response.header.Access-Control-Allow-Headers" = "'Content-Type,Authorization'"
@@ -488,6 +508,10 @@ resource "aws_api_gateway_integration_response" "moves_options" {
   resource_id = aws_api_gateway_resource.moves.id
   http_method = aws_api_gateway_method.moves_options.http_method
   status_code = aws_api_gateway_method_response.moves_options_200.status_code
+
+  depends_on = [
+    aws_api_gateway_integration.moves_options
+  ]
 
   response_parameters = {
     "method.response.header.Access-Control-Allow-Headers" = "'Content-Type,Authorization'"
@@ -591,6 +615,10 @@ resource "aws_api_gateway_integration_response" "moves_id_options" {
   http_method = aws_api_gateway_method.moves_id_options.http_method
   status_code = aws_api_gateway_method_response.moves_id_options_200.status_code
 
+  depends_on = [
+    aws_api_gateway_integration.moves_id_options
+  ]
+
   response_parameters = {
     "method.response.header.Access-Control-Allow-Headers" = "'Content-Type,Authorization'"
     "method.response.header.Access-Control-Allow-Methods" = "'OPTIONS,GET,PUT,DELETE'"
@@ -679,6 +707,10 @@ resource "aws_api_gateway_integration_response" "videos_url_options" {
   http_method = aws_api_gateway_method.videos_url_options.http_method
   status_code = aws_api_gateway_method_response.videos_url_options_200.status_code
 
+  depends_on = [
+    aws_api_gateway_integration.videos_url_options
+  ]
+
   response_parameters = {
     "method.response.header.Access-Control-Allow-Headers" = "'Content-Type,Authorization'"
     "method.response.header.Access-Control-Allow-Methods" = "'OPTIONS,GET'"
@@ -740,6 +772,10 @@ resource "aws_api_gateway_integration_response" "videos_upload_options" {
   resource_id = aws_api_gateway_resource.videos_upload_url.id
   http_method = aws_api_gateway_method.videos_upload_options.http_method
   status_code = aws_api_gateway_method_response.videos_upload_options_200.status_code
+
+  depends_on = [
+    aws_api_gateway_integration.videos_upload_options
+  ]
 
   response_parameters = {
     "method.response.header.Access-Control-Allow-Headers" = "'Content-Type,Authorization'"
@@ -832,6 +868,10 @@ resource "aws_api_gateway_integration_response" "events_options" {
   http_method = aws_api_gateway_method.events_options.http_method
   status_code = aws_api_gateway_method_response.events_options_200.status_code
 
+  depends_on = [
+    aws_api_gateway_integration.events_options
+  ]
+
   response_parameters = {
     "method.response.header.Access-Control-Allow-Headers" = "'Content-Type,Authorization'"
     "method.response.header.Access-Control-Allow-Methods" = "'OPTIONS,GET,POST'"
@@ -876,9 +916,14 @@ resource "aws_api_gateway_stage" "acro_hub" {
 
   access_log_settings {
     destination_arn = aws_cloudwatch_log_group.api_gateway.arn
+    format         = "$context.requestId $context.extendedRequestId $context.identity.sourceIp $context.requestTime $context.httpMethod $context.resourcePath $context.protocol $context.status $context.responseLength $context.error.message $context.error.messageString"
   }
 
   xray_tracing_enabled = true
+
+  depends_on = [
+    aws_api_gateway_account.acro_hub
+  ]
 }
 
 # ── Custom Domain ─────────────────────────────────────────────────────────────

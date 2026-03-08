@@ -1,10 +1,11 @@
 # ── Route 53 Hosted Zone ──────────────────────────────────────────────────────
+# Using existing hosted zone created by domain registrar
 
-resource "aws_route53_zone" "acro_hub" {
-  name = var.domain_name
+data "aws_route53_zone" "acro_hub" {
+  zone_id = "Z04501911GNFDYM9PBX6Y"
 }
 
-# ── ACM Certificate for api.acrohub.dance ─────────────────────────────────────
+# ── ACM Certificate for api.acrohub.org ─────────────────────────────────────
 # Must be in us-east-1 for edge-optimised API Gateway; use regional for REGIONAL endpoints.
 # This project uses REGIONAL API Gateway, so the certificate can be in the same region.
 
@@ -32,7 +33,7 @@ resource "aws_route53_record" "acm_validation" {
     }
   }
 
-  zone_id = aws_route53_zone.acro_hub.zone_id
+  zone_id = data.aws_route53_zone.acro_hub.zone_id
   name    = each.value.name
   type    = each.value.type
   ttl     = 60
@@ -46,10 +47,10 @@ resource "aws_acm_certificate_validation" "api" {
   validation_record_fqdns = [for r in aws_route53_record.acm_validation : r.fqdn]
 }
 
-# ── A record pointing api.acrohub.dance → API Gateway ───────────────────────
+# ── A record pointing api.acrohub.org → API Gateway ───────────────────────
 
 resource "aws_route53_record" "api" {
-  zone_id = aws_route53_zone.acro_hub.zone_id
+  zone_id = data.aws_route53_zone.acro_hub.zone_id
   name    = "api.${var.domain_name}"
   type    = "A"
 
