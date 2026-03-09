@@ -234,5 +234,70 @@ class TestListEvents(unittest.TestCase):
         mock_table.scan.assert_called_once()
 
 
+# ── Logging tests ─────────────────────────────────────────────────────────────
+
+class TestEventsLogging(unittest.TestCase):
+    """Verify that each handler emits the expected log messages."""
+
+    def setUp(self):
+        events_handler._table = None
+        events_handler._dynamodb = None
+
+    @patch("boto3.resource")
+    def test_track_event_logs_entry_and_response(self, mock_resource):
+        mock_table = MagicMock()
+        mock_resource.return_value.Table.return_value = mock_table
+        mock_table.put_item.return_value = {}
+
+        with self.assertLogs("root", level="INFO") as cm:
+            events_handler.track_event(
+                _authed_event(body={"eventType": "login"}), None
+            )
+
+        messages = "\n".join(cm.output)
+        self.assertIn("track_event called", messages)
+        self.assertIn("login", messages)
+        self.assertIn("user-sub-abc123", messages)
+        self.assertIn("Returning status 201", messages)
+
+    def test_track_event_logs_invalid_event_type_warning(self):
+        with self.assertLogs("root", level="INFO") as cm:
+            events_handler.track_event(
+                _authed_event(body={"eventType": "unknown_type"}), None
+            )
+
+        messages = "\n".join(cm.output)
+        self.assertIn("invalid eventType", messages)
+        self.assertIn("Returning status 400", messages)
+
+    @patch("boto3.resource")
+    def test_list_events_logs_entry_filters_and_count(self, mock_resource):
+        mock_table = MagicMock()
+        mock_resource.return_value.Table.return_value = mock_table
+        mock_table.scan.return_value = {"Items": [SAMPLE_EVENT]}
+
+        with self.assertLogs("root", level="INFO") as cm:
+            events_handler.list_events(_authed_event(), None)
+
+        messages = "\n".join(cm.output)
+        self.assertIn("list_events called", messages)
+        self.assertIn("full table scan", messages)
+        self.assertIn("Returning status 200", messages)
+
+    @patch("boto3.resource")
+    def test_list_events_logs_gsi_path_for_user_id(self, mock_resource):
+        mock_table = MagicMock()
+        mock_resource.return_value.Table.return_value = mock_table
+        mock_table.query.return_value = {"Items": []}
+
+        with self.assertLogs("root", level="INFO") as cm:
+            events_handler.list_events(
+                _authed_event(params={"userId": "user-sub-abc123"}), None
+            )
+
+        messages = "\n".join(cm.output)
+        self.assertIn("userId-timestamp GSI", messages)
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -62,19 +62,29 @@ def _parse_body(event: dict) -> dict:
     return raw
 
 
+def _log_response(response: dict) -> dict:
+    """Log the HTTP status code of an outgoing response and return it unchanged."""
+    logger.info("Returning status %d", response["statusCode"])
+    return response
+
+
 # ── Handlers ─────────────────────────────────────────────────────────────────
 
 def login(event, context):
     """POST /auth/login — authenticate with email + password."""
+    logger.info("login called")
     try:
         body = _parse_body(event)
     except json.JSONDecodeError:
-        return _bad_request("Invalid JSON body")
+        logger.warning("login: invalid JSON body")
+        return _log_response(_bad_request("Invalid JSON body"))
 
     email = body.get("email")
     password = body.get("password")
+    logger.info("login: email=%s", email)
     if not email or not password:
-        return _bad_request("email and password are required")
+        logger.warning("login: missing required field(s) — email=%s, password_provided=%s", email, bool(password))
+        return _log_response(_bad_request("email and password are required"))
 
     client = _get_client()
     try:
@@ -86,33 +96,40 @@ def login(event, context):
     except ClientError as exc:
         code = exc.response["Error"]["Code"]
         if code in ("UserNotFoundException", "NotAuthorizedException"):
-            return _error(401, "Invalid credentials")
+            logger.warning("login: authentication failed for email=%s — %s", email, code)
+            return _log_response(_error(401, "Invalid credentials"))
         if code == "UserNotConfirmedException":
-            return _error(403, "User not confirmed. Please verify your email.")
-        logger.error("Cognito error during login: %s", exc)
-        return _error(500, "Authentication error")
+            logger.warning("login: user not confirmed for email=%s", email)
+            return _log_response(_error(403, "User not confirmed. Please verify your email."))
+        logger.error("login: unexpected Cognito error for email=%s — %s", email, exc)
+        return _log_response(_error(500, "Authentication error"))
 
+    logger.info("login: successful for email=%s", email)
     auth_result = response.get("AuthenticationResult", {})
-    return _ok(
-        {
-            "accessToken": auth_result.get("AccessToken"),
-            "idToken": auth_result.get("IdToken"),
-            "refreshToken": auth_result.get("RefreshToken"),
-            "expiresIn": auth_result.get("ExpiresIn"),
-            "tokenType": auth_result.get("TokenType"),
-        }
+    return _log_response(
+        _ok(
+            {
+                "accessToken": auth_result.get("AccessToken"),
+                "idToken": auth_result.get("IdToken"),
+                "refreshToken": auth_result.get("RefreshToken"),
+                "expiresIn": auth_result.get("ExpiresIn"),
+                "tokenType": auth_result.get("TokenType"),
+            }
+        )
     )
 
 
 def logout(event, context):
     """POST /auth/logout — globally revoke all tokens for the current user."""
+    logger.info("logout called")
     auth_header = (event.get("headers") or {}).get("Authorization") or (
         event.get("headers") or {}
     ).get("authorization", "")
 
     access_token = auth_header.replace("Bearer ", "").strip()
     if not access_token:
-        return _bad_request("Authorization header with Bearer token is required")
+        logger.warning("logout: missing Authorization header / Bearer token")
+        return _log_response(_bad_request("Authorization header with Bearer token is required"))
 
     client = _get_client()
     try:
@@ -120,25 +137,31 @@ def logout(event, context):
     except ClientError as exc:
         code = exc.response["Error"]["Code"]
         if code == "NotAuthorizedException":
-            return _error(401, "Token is invalid or already expired")
-        logger.error("Cognito error during logout: %s", exc)
-        return _error(500, "Logout error")
+            logger.warning("logout: token is invalid or already expired — %s", code)
+            return _log_response(_error(401, "Token is invalid or already expired"))
+        logger.error("logout: unexpected Cognito error — %s", exc)
+        return _log_response(_error(500, "Logout error"))
 
-    return _ok({"message": "Logged out successfully"})
+    logger.info("logout: successful")
+    return _log_response(_ok({"message": "Logged out successfully"}))
 
 
 def register(event, context):
     """POST /auth/register — sign up a new user."""
+    logger.info("register called")
     try:
         body = _parse_body(event)
     except json.JSONDecodeError:
-        return _bad_request("Invalid JSON body")
+        logger.warning("register: invalid JSON body")
+        return _log_response(_bad_request("Invalid JSON body"))
 
     email = body.get("email")
     password = body.get("password")
     name = body.get("name", "")
+    logger.info("register: email=%s, name=%s", email, name or "<not provided>")
     if not email or not password:
-        return _bad_request("email and password are required")
+        logger.warning("register: missing required field(s) — email=%s, password_provided=%s", email, bool(password))
+        return _log_response(_bad_request("email and password are required"))
 
     client = _get_client()
     user_attributes = [{"Name": "email", "Value": email}]
@@ -155,37 +178,47 @@ def register(event, context):
     except ClientError as exc:
         code = exc.response["Error"]["Code"]
         if code == "UsernameExistsException":
-            return _error(409, "An account with this email already exists")
+            logger.warning("register: duplicate email=%s — account already exists", email)
+            return _log_response(_error(409, "An account with this email already exists"))
         if code == "InvalidPasswordException":
-            return _bad_request(exc.response["Error"]["Message"])
+            logger.warning("register: invalid password for email=%s — %s", email, exc.response["Error"]["Message"])
+            return _log_response(_bad_request(exc.response["Error"]["Message"]))
         if code == "InvalidParameterException":
-            return _bad_request(exc.response["Error"]["Message"])
-        logger.error("Cognito error during register: %s", exc)
-        return _error(500, "Registration error")
+            logger.warning("register: invalid parameter for email=%s — %s", email, exc.response["Error"]["Message"])
+            return _log_response(_bad_request(exc.response["Error"]["Message"]))
+        logger.error("register: unexpected Cognito error for email=%s — %s", email, exc)
+        return _log_response(_error(500, "Registration error"))
 
-    return {
-        "statusCode": 201,
-        "headers": CORS_HEADERS,
-        "body": json.dumps(
-            {
-                "message": "Registration successful. Please check your email to verify your account.",
-                "userSub": response.get("UserSub"),
-                "confirmed": response.get("UserConfirmed", False),
-            }
-        ),
-    }
+    logger.info("register: successful for email=%s, userSub=%s", email, response.get("UserSub"))
+    return _log_response(
+        {
+            "statusCode": 201,
+            "headers": CORS_HEADERS,
+            "body": json.dumps(
+                {
+                    "message": "Registration successful. Please check your email to verify your account.",
+                    "userSub": response.get("UserSub"),
+                    "confirmed": response.get("UserConfirmed", False),
+                }
+            ),
+        }
+    )
 
 
 def forgot_password(event, context):
     """POST /auth/forgot-password — initiate the Cognito forgot-password flow."""
+    logger.info("forgot_password called")
     try:
         body = _parse_body(event)
     except json.JSONDecodeError:
-        return _bad_request("Invalid JSON body")
+        logger.warning("forgot_password: invalid JSON body")
+        return _log_response(_bad_request("Invalid JSON body"))
 
     email = body.get("email")
+    logger.info("forgot_password: email=%s", email)
     if not email:
-        return _bad_request("email is required")
+        logger.warning("forgot_password: missing required field — email")
+        return _log_response(_bad_request("email is required"))
 
     client = _get_client()
     try:
@@ -193,28 +226,38 @@ def forgot_password(event, context):
     except ClientError as exc:
         code = exc.response["Error"]["Code"]
         if code == "UserNotFoundException":
-            # Return success to avoid user enumeration
-            return _ok({"message": "If the account exists, a reset code has been sent"})
+            # Return success to avoid user enumeration; log internally for diagnostics
+            logger.info("forgot_password: user not found for email=%s — returning generic success to prevent enumeration", email)
+            return _log_response(_ok({"message": "If the account exists, a reset code has been sent"}))
         if code == "InvalidParameterException":
-            return _bad_request(exc.response["Error"]["Message"])
-        logger.error("Cognito error during forgot_password: %s", exc)
-        return _error(500, "Password reset error")
+            logger.warning("forgot_password: invalid parameter for email=%s — %s", email, exc.response["Error"]["Message"])
+            return _log_response(_bad_request(exc.response["Error"]["Message"]))
+        logger.error("forgot_password: unexpected Cognito error for email=%s — %s", email, exc)
+        return _log_response(_error(500, "Password reset error"))
 
-    return _ok({"message": "Password reset code sent to your email"})
+    logger.info("forgot_password: reset code sent for email=%s", email)
+    return _log_response(_ok({"message": "Password reset code sent to your email"}))
 
 
 def confirm_password(event, context):
     """POST /auth/confirm-password — confirm a new password with the reset code."""
+    logger.info("confirm_password called")
     try:
         body = _parse_body(event)
     except json.JSONDecodeError:
-        return _bad_request("Invalid JSON body")
+        logger.warning("confirm_password: invalid JSON body")
+        return _log_response(_bad_request("Invalid JSON body"))
 
     email = body.get("email")
     code = body.get("code")
     new_password = body.get("newPassword")
+    logger.info("confirm_password: email=%s", email)
     if not email or not code or not new_password:
-        return _bad_request("email, code and newPassword are required")
+        logger.warning(
+            "confirm_password: missing required field(s) — email=%s, code_provided=%s, newPassword_provided=%s",
+            email, bool(code), bool(new_password),
+        )
+        return _log_response(_bad_request("email, code and newPassword are required"))
 
     client = _get_client()
     try:
@@ -227,14 +270,19 @@ def confirm_password(event, context):
     except ClientError as exc:
         err_code = exc.response["Error"]["Code"]
         if err_code == "CodeMismatchException":
-            return _error(400, "Invalid verification code")
+            logger.warning("confirm_password: code mismatch for email=%s", email)
+            return _log_response(_error(400, "Invalid verification code"))
         if err_code == "ExpiredCodeException":
-            return _error(400, "Verification code has expired")
+            logger.warning("confirm_password: expired code for email=%s", email)
+            return _log_response(_error(400, "Verification code has expired"))
         if err_code == "UserNotFoundException":
-            return _error(404, "User not found")
+            logger.warning("confirm_password: user not found — email=%s", email)
+            return _log_response(_error(404, "User not found"))
         if err_code == "InvalidPasswordException":
-            return _bad_request(exc.response["Error"]["Message"])
-        logger.error("Cognito error during confirm_password: %s", exc)
-        return _error(500, "Password confirmation error")
+            logger.warning("confirm_password: invalid password for email=%s — %s", email, exc.response["Error"]["Message"])
+            return _log_response(_bad_request(exc.response["Error"]["Message"]))
+        logger.error("confirm_password: unexpected Cognito error for email=%s — %s", email, exc)
+        return _log_response(_error(500, "Password confirmation error"))
 
-    return _ok({"message": "Password reset successfully"})
+    logger.info("confirm_password: successful for email=%s", email)
+    return _log_response(_ok({"message": "Password reset successfully"}))

@@ -252,5 +252,76 @@ class TestDeleteMove(unittest.TestCase):
         self.assertEqual(resp["statusCode"], 400)
 
 
+# ── Logging tests ─────────────────────────────────────────────────────────────
+
+class TestMovesLogging(unittest.TestCase):
+    """Verify that each handler emits the expected log messages."""
+
+    def setUp(self):
+        moves_handler._table = None
+        moves_handler._dynamodb = None
+
+    @patch("boto3.resource")
+    def test_list_moves_logs_entry_and_count(self, mock_resource):
+        mock_table = MagicMock()
+        mock_resource.return_value.Table.return_value = mock_table
+        mock_table.scan.return_value = {"Items": [SAMPLE_MOVE, SAMPLE_MOVE]}
+
+        with self.assertLogs("root", level="INFO") as cm:
+            moves_handler.list_moves({}, None)
+
+        messages = "\n".join(cm.output)
+        self.assertIn("list_moves called", messages)
+        self.assertIn("2", messages)
+        self.assertIn("Returning status 200", messages)
+
+    @patch("boto3.resource")
+    def test_get_move_logs_entry_and_not_found(self, mock_resource):
+        mock_table = MagicMock()
+        mock_resource.return_value.Table.return_value = mock_table
+        mock_table.get_item.return_value = {}
+
+        with self.assertLogs("root", level="INFO") as cm:
+            moves_handler.get_move({"pathParameters": {"id": "ghost-id"}}, None)
+
+        messages = "\n".join(cm.output)
+        self.assertIn("ghost-id", messages)
+        self.assertIn("not found", messages)
+        self.assertIn("Returning status 404", messages)
+
+    @patch("boto3.resource")
+    def test_create_move_logs_name_difficulty_category(self, mock_resource):
+        mock_table = MagicMock()
+        mock_resource.return_value.Table.return_value = mock_table
+        mock_table.put_item.return_value = {}
+
+        with self.assertLogs("root", level="INFO") as cm:
+            moves_handler.create_move(
+                {"body": json.dumps({"name": "Throne", "difficulty": "hard", "category": "acrobalance"})},
+                None,
+            )
+
+        messages = "\n".join(cm.output)
+        self.assertIn("Throne", messages)
+        self.assertIn("hard", messages)
+        self.assertIn("acrobalance", messages)
+        self.assertIn("Returning status 201", messages)
+
+    @patch("boto3.resource")
+    def test_delete_move_logs_success(self, mock_resource):
+        mock_table = MagicMock()
+        mock_resource.return_value.Table.return_value = mock_table
+        mock_table.get_item.return_value = {"Item": SAMPLE_MOVE}
+        mock_table.delete_item.return_value = {}
+
+        with self.assertLogs("root", level="INFO") as cm:
+            moves_handler.delete_move(_id_event("move-123"), None)
+
+        messages = "\n".join(cm.output)
+        self.assertIn("delete_move called", messages)
+        self.assertIn("move-123", messages)
+        self.assertIn("Returning status 200", messages)
+
+
 if __name__ == "__main__":
     unittest.main()
