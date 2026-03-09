@@ -1,0 +1,773 @@
+openapi: "3.0.3"
+info:
+  title: Acro Hub API
+  description: >
+    Backend API for Acro Hub — a platform for browsing and sharing partner acrobatic moves.
+    All endpoints except the authentication routes require a valid Cognito JWT passed
+    as a Bearer token in the Authorization header.
+  version: "1.0.0"
+  contact:
+    name: Acro Hub
+    url: https://acrohub.org
+
+servers:
+  - url: https://api.acrohub.org
+    description: Production
+
+security: []
+
+components:
+  securitySchemes:
+    CognitoAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: Cognito ID token obtained from POST /auth/login
+
+  schemas:
+    # ── Auth ──────────────────────────────────────────────────────────────────
+    LoginRequest:
+      type: object
+      required: [email, password]
+      properties:
+        email:
+          type: string
+          format: email
+          example: user@example.com
+        password:
+          type: string
+          format: password
+          minLength: 8
+          example: Password1!
+
+    RegisterRequest:
+      type: object
+      required: [email, password]
+      properties:
+        email:
+          type: string
+          format: email
+          example: new@example.com
+        password:
+          type: string
+          format: password
+          minLength: 8
+          example: Password1!
+        name:
+          type: string
+          example: Jane Doe
+
+    ForgotPasswordRequest:
+      type: object
+      required: [email]
+      properties:
+        email:
+          type: string
+          format: email
+          example: user@example.com
+
+    ConfirmPasswordRequest:
+      type: object
+      required: [email, code, newPassword]
+      properties:
+        email:
+          type: string
+          format: email
+          example: user@example.com
+        code:
+          type: string
+          example: "123456"
+        newPassword:
+          type: string
+          format: password
+          minLength: 8
+          example: NewPassword1!
+
+    AuthResponse:
+      type: object
+      properties:
+        accessToken:
+          type: string
+          description: Short-lived Cognito access token
+        idToken:
+          type: string
+          description: JWT ID token containing user claims
+        refreshToken:
+          type: string
+          description: Long-lived refresh token
+        expiresIn:
+          type: integer
+          description: Token lifetime in seconds
+          example: 3600
+        tokenType:
+          type: string
+          example: Bearer
+
+    RegisterResponse:
+      type: object
+      properties:
+        message:
+          type: string
+        userSub:
+          type: string
+          description: Cognito user UUID
+        confirmed:
+          type: boolean
+
+    MessageResponse:
+      type: object
+      properties:
+        message:
+          type: string
+          example: Operation completed successfully
+
+    # ── Move ──────────────────────────────────────────────────────────────────
+    Move:
+      type: object
+      properties:
+        moveId:
+          type: string
+          format: uuid
+          readOnly: true
+          description: Unique identifier (UUID)
+        name:
+          type: string
+          example: Star
+        description:
+          type: string
+          example: Classic acrobalance star pose
+        difficulty:
+          type: string
+          enum: [easy, medium, hard, expert]
+          example: easy
+        category:
+          type: string
+          enum: [acrobalance, hand-to-hand, icarian, washing-machine]
+          example: acrobalance
+        videoKey:
+          type: string
+          description: S3 object key of the associated video
+          example: videos/abc-123/clip.mp4
+        tags:
+          type: array
+          items:
+            type: string
+          example: [static, beginner]
+        createdAt:
+          type: string
+          format: date-time
+          readOnly: true
+        updatedAt:
+          type: string
+          format: date-time
+          readOnly: true
+
+    MoveRequest:
+      type: object
+      required: [name]
+      properties:
+        name:
+          type: string
+          example: Star
+        description:
+          type: string
+          example: Classic acrobalance star pose
+        difficulty:
+          type: string
+          enum: [easy, medium, hard, expert]
+          default: easy
+        category:
+          type: string
+          enum: [acrobalance, hand-to-hand, icarian, washing-machine]
+          default: acrobalance
+        videoKey:
+          type: string
+        tags:
+          type: array
+          items:
+            type: string
+
+    MoveUpdateRequest:
+      type: object
+      description: All fields are optional — only supplied fields are updated
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+        difficulty:
+          type: string
+          enum: [easy, medium, hard, expert]
+        category:
+          type: string
+          enum: [acrobalance, hand-to-hand, icarian, washing-machine]
+        videoKey:
+          type: string
+        tags:
+          type: array
+          items:
+            type: string
+
+    MovesListResponse:
+      type: object
+      properties:
+        moves:
+          type: array
+          items:
+            $ref: "#/components/schemas/Move"
+        count:
+          type: integer
+
+    # ── Video ─────────────────────────────────────────────────────────────────
+    VideoUrlResponse:
+      type: object
+      properties:
+        url:
+          type: string
+          format: uri
+          description: Pre-signed S3 GET URL
+        expiresIn:
+          type: integer
+          example: 3600
+        moveId:
+          type: string
+
+    UploadUrlResponse:
+      type: object
+      properties:
+        uploadUrl:
+          type: string
+          format: uri
+          description: Pre-signed S3 PUT URL — upload the video directly to this URL
+        videoKey:
+          type: string
+          description: S3 key to store in the move record after upload
+          example: videos/abc-123/uuid.mp4
+        expiresIn:
+          type: integer
+          example: 3600
+        moveId:
+          type: string
+
+    # ── Event ─────────────────────────────────────────────────────────────────
+    EventRequest:
+      type: object
+      required: [eventType]
+      properties:
+        eventType:
+          type: string
+          enum: [login, logout, move_view, move_upload, registration]
+          example: move_view
+        resourceId:
+          type: string
+          description: ID of the resource being acted on (e.g. moveId)
+          example: abc-123
+        metadata:
+          type: object
+          additionalProperties: true
+          description: Optional free-form metadata
+
+    Event:
+      type: object
+      properties:
+        eventId:
+          type: string
+          format: uuid
+          readOnly: true
+        eventType:
+          type: string
+          enum: [login, logout, move_view, move_upload, registration]
+        userId:
+          type: string
+          description: Cognito sub of the authenticated user
+        resourceId:
+          type: string
+        timestamp:
+          type: string
+          format: date-time
+          readOnly: true
+        metadata:
+          type: object
+          additionalProperties: true
+
+    EventsListResponse:
+      type: object
+      properties:
+        events:
+          type: array
+          items:
+            $ref: "#/components/schemas/Event"
+        count:
+          type: integer
+
+    # ── Error ─────────────────────────────────────────────────────────────────
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+          example: Invalid credentials
+
+paths:
+  # ── Auth ────────────────────────────────────────────────────────────────────
+
+  /auth/login:
+    post:
+      summary: Login with email and password
+      operationId: login
+      tags: [Authentication]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginRequest"
+      responses:
+        "200":
+          description: Successful authentication — returns JWT tokens
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResponse"
+        "400":
+          description: Missing or invalid request fields
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Invalid credentials
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: User account not confirmed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /auth/logout:
+    post:
+      summary: Logout and revoke all tokens
+      operationId: logout
+      tags: [Authentication]
+      parameters:
+        - in: header
+          name: Authorization
+          required: true
+          schema:
+            type: string
+          description: "Bearer <accessToken>"
+      responses:
+        "200":
+          description: Successfully logged out
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MessageResponse"
+        "400":
+          description: Missing Authorization header
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Token invalid or already expired
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /auth/register:
+    post:
+      summary: Register a new user
+      operationId: register
+      tags: [Authentication]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RegisterRequest"
+      responses:
+        "201":
+          description: Registration successful — verification email sent
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RegisterResponse"
+        "400":
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "409":
+          description: An account with this email already exists
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /auth/forgot-password:
+    post:
+      summary: Initiate a password reset
+      operationId: forgotPassword
+      tags: [Authentication]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ForgotPasswordRequest"
+      responses:
+        "200":
+          description: Reset code sent (always 200 to prevent user enumeration)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MessageResponse"
+        "400":
+          description: Missing email
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /auth/confirm-password:
+    post:
+      summary: Confirm password reset with verification code
+      operationId: confirmPassword
+      tags: [Authentication]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ConfirmPasswordRequest"
+      responses:
+        "200":
+          description: Password reset successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MessageResponse"
+        "400":
+          description: Invalid code or password
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  # ── Moves ───────────────────────────────────────────────────────────────────
+
+  /moves:
+    get:
+      summary: List all acrobatic moves
+      operationId: listMoves
+      tags: [Moves]
+      security:
+        - CognitoAuth: []
+      responses:
+        "200":
+          description: List of moves
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MovesListResponse"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+    post:
+      summary: Create a new acrobatic move
+      operationId: createMove
+      tags: [Moves]
+      security:
+        - CognitoAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MoveRequest"
+      responses:
+        "201":
+          description: Move created successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Move"
+        "400":
+          description: Invalid request body
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /moves/{moveId}:
+    parameters:
+      - in: path
+        name: moveId
+        required: true
+        schema:
+          type: string
+        description: Unique move identifier
+
+    get:
+      summary: Get a single move by ID
+      operationId: getMove
+      tags: [Moves]
+      security:
+        - CognitoAuth: []
+      responses:
+        "200":
+          description: Move details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Move"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Move not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+    put:
+      summary: Update an existing move
+      operationId: updateMove
+      tags: [Moves]
+      security:
+        - CognitoAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MoveUpdateRequest"
+      responses:
+        "200":
+          description: Updated move
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Move"
+        "400":
+          description: Invalid request body
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Move not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+    delete:
+      summary: Delete a move
+      operationId: deleteMove
+      tags: [Moves]
+      security:
+        - CognitoAuth: []
+      responses:
+        "200":
+          description: Move deleted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MessageResponse"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Move not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  # ── Videos ──────────────────────────────────────────────────────────────────
+
+  /videos/{moveId}/url:
+    parameters:
+      - in: path
+        name: moveId
+        required: true
+        schema:
+          type: string
+        description: Move ID whose video URL is requested
+
+    get:
+      summary: Get a pre-signed URL to stream the move video
+      operationId: getVideoUrl
+      tags: [Videos]
+      security:
+        - CognitoAuth: []
+      responses:
+        "200":
+          description: Pre-signed GET URL valid for 1 hour
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VideoUrlResponse"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Move or video not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /videos/{moveId}/upload-url:
+    parameters:
+      - in: path
+        name: moveId
+        required: true
+        schema:
+          type: string
+        description: Move ID to associate the uploaded video with
+
+    post:
+      summary: Get a pre-signed URL to upload a video to S3
+      operationId: getUploadUrl
+      tags: [Videos]
+      security:
+        - CognitoAuth: []
+      responses:
+        "200":
+          description: Pre-signed PUT URL valid for 1 hour
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UploadUrlResponse"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Move not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  # ── Events ──────────────────────────────────────────────────────────────────
+
+  /events:
+    get:
+      summary: List operational events
+      operationId: listEvents
+      tags: [Events]
+      security:
+        - CognitoAuth: []
+      parameters:
+        - in: query
+          name: userId
+          schema:
+            type: string
+          description: Filter events by Cognito user sub
+        - in: query
+          name: eventType
+          schema:
+            type: string
+            enum: [login, logout, move_view, move_upload, registration]
+          description: Filter by event type
+        - in: query
+          name: from
+          schema:
+            type: string
+            format: date-time
+          description: Include events at or after this ISO 8601 timestamp
+        - in: query
+          name: to
+          schema:
+            type: string
+            format: date-time
+          description: Include events at or before this ISO 8601 timestamp
+      responses:
+        "200":
+          description: List of events matching the filters
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EventsListResponse"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+    post:
+      summary: Record a new operational event
+      operationId: trackEvent
+      tags: [Events]
+      security:
+        - CognitoAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/EventRequest"
+      responses:
+        "201":
+          description: Event recorded successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Event"
+        "400":
+          description: Invalid request body
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
