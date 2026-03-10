@@ -171,5 +171,66 @@ class TestGetUploadUrl(unittest.TestCase):
         self.assertEqual(resp["statusCode"], 500)
 
 
+# ── Logging tests ─────────────────────────────────────────────────────────────
+
+class TestVideosLogging(unittest.TestCase):
+    """Verify that each handler emits the expected log messages."""
+
+    def setUp(self):
+        videos_handler._s3 = None
+        videos_handler._moves_table = None
+        videos_handler._dynamodb = None
+
+    @patch("boto3.resource")
+    @patch("boto3.client")
+    def test_get_video_url_logs_entry_and_response(self, mock_boto_client, mock_resource):
+        mock_s3 = MagicMock()
+        mock_boto_client.return_value = mock_s3
+        mock_table = MagicMock()
+        mock_resource.return_value.Table.return_value = mock_table
+        mock_table.get_item.return_value = {"Item": SAMPLE_MOVE}
+        mock_s3.generate_presigned_url.return_value = "https://presigned-url"
+
+        with self.assertLogs("root", level="INFO") as cm:
+            videos_handler.get_video_url(_move_id_event("move-abc"), None)
+
+        messages = "\n".join(cm.output)
+        self.assertIn("get_video_url called", messages)
+        self.assertIn("move-abc", messages)
+        self.assertIn("Returning status 200", messages)
+
+    @patch("boto3.resource")
+    def test_get_video_url_logs_not_found_warning(self, mock_resource):
+        mock_table = MagicMock()
+        mock_resource.return_value.Table.return_value = mock_table
+        mock_table.get_item.return_value = {}
+
+        with self.assertLogs("root", level="INFO") as cm:
+            videos_handler.get_video_url(_move_id_event("ghost-id"), None)
+
+        messages = "\n".join(cm.output)
+        self.assertIn("ghost-id", messages)
+        self.assertIn("not found", messages)
+        self.assertIn("Returning status 404", messages)
+
+    @patch("boto3.resource")
+    @patch("boto3.client")
+    def test_get_upload_url_logs_entry_and_response(self, mock_boto_client, mock_resource):
+        mock_s3 = MagicMock()
+        mock_boto_client.return_value = mock_s3
+        mock_table = MagicMock()
+        mock_resource.return_value.Table.return_value = mock_table
+        mock_table.get_item.return_value = {"Item": SAMPLE_MOVE}
+        mock_s3.generate_presigned_url.return_value = "https://upload-url"
+
+        with self.assertLogs("root", level="INFO") as cm:
+            videos_handler.get_upload_url(_move_id_event("move-abc"), None)
+
+        messages = "\n".join(cm.output)
+        self.assertIn("get_upload_url called", messages)
+        self.assertIn("move-abc", messages)
+        self.assertIn("Returning status 200", messages)
+
+
 if __name__ == "__main__":
     unittest.main()

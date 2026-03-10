@@ -8,7 +8,7 @@ $services = @("auth", "moves", "videos", "events")
 $baseDir = $PSScriptRoot
 
 foreach ($svc in $services) {
-    Write-Host "📦 Packaging $svc..." -ForegroundColor Yellow
+    Write-Host "Packaging $svc..." -ForegroundColor Yellow
 
     $svcDir = Join-Path $baseDir "lambdas\$svc"
     $packageDir = Join-Path $svcDir "package"
@@ -46,20 +46,20 @@ foreach ($svc in $services) {
 
     # Verify ZIP was created
     if (Test-Path $zipFile) {
-        $size = (Get-Item $zipFile).Length / 1MB
-        Write-Host "  ✓ Created function.zip ($([math]::Round($size, 2)) MB)" -ForegroundColor Green
+        $size = [math]::Round((Get-Item $zipFile).Length / 1MB, 2)
+        Write-Host "  Created function.zip ($size MB)" -ForegroundColor Green
     } else {
-        Write-Host "  ✗ Failed to create function.zip" -ForegroundColor Red
+        Write-Host "  Failed to create function.zip" -ForegroundColor Red
     }
 
     Write-Host ""
 }
 
-Write-Host "✓ All Lambda functions packaged successfully!" -ForegroundColor Green
+Write-Host "All Lambda functions packaged successfully!" -ForegroundColor Green
 Write-Host ""
 Write-Host "Next steps:" -ForegroundColor Cyan
 Write-Host "  1. cd terraform" -ForegroundColor White
 Write-Host "  2. terraform init" -ForegroundColor White
-Write-Host "  3. terraform plan -var='environment=prod'" -ForegroundColor White
-Write-Host "  4. terraform apply -var='environment=prod'" -ForegroundColor White
+Write-Host "  3. terraform plan -var=`"environment=prod`"" -ForegroundColor White
+Write-Host "  4. terraform apply -var=`"environment=prod`"" -ForegroundColor White
 

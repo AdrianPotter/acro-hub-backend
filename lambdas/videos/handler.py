@@ -75,30 +75,41 @@ def _error(status: int, message: str) -> dict:
     }
 
 
+def _log_response(response: dict) -> dict:
+    """Log the HTTP status code of an outgoing response and return it unchanged."""
+    logger.info("Returning status %d", response["statusCode"])
+    return response
+
+
 # ── Handlers ─────────────────────────────────────────────────────────────────
 
 def get_video_url(event, context):
     """GET /videos/{moveId}/url — generate a pre-signed URL for viewing a video."""
     move_id = (event.get("pathParameters") or {}).get("moveId")
+    logger.info("get_video_url called: move_id=%s", move_id)
     if not move_id:
-        return _bad_request("moveId path parameter is required")
+        logger.warning("get_video_url: missing moveId path parameter")
+        return _log_response(_bad_request("moveId path parameter is required"))
 
     # Look up the move to get the S3 videoKey
     table = _get_moves_table()
     try:
         result = table.get_item(Key={"moveId": move_id})
     except ClientError as exc:
-        logger.error("DynamoDB error during get_video_url: %s", exc)
-        return _error(500, "Failed to retrieve move")
+        logger.error("get_video_url: DynamoDB error for move_id=%s — %s", move_id, exc)
+        return _log_response(_error(500, "Failed to retrieve move"))
 
     item = result.get("Item")
     if not item:
-        return _not_found(f"Move '{move_id}' not found")
+        logger.warning("get_video_url: move_id=%s not found", move_id)
+        return _log_response(_not_found(f"Move '{move_id}' not found"))
 
     video_key = item.get("videoKey", "").strip()
     if not video_key:
-        return _not_found(f"No video associated with move '{move_id}'")
+        logger.warning("get_video_url: no video associated with move_id=%s", move_id)
+        return _log_response(_not_found(f"No video associated with move '{move_id}'"))
 
+    logger.info("get_video_url: generating pre-signed URL for move_id=%s, video_key=%s", move_id, video_key)
     s3 = _get_s3()
     try:
         url = s3.generate_presigned_url(
@@ -107,30 +118,35 @@ def get_video_url(event, context):
             ExpiresIn=PRESIGNED_URL_EXPIRY,
         )
     except ClientError as exc:
-        logger.error("S3 pre-sign error during get_video_url: %s", exc)
-        return _error(500, "Failed to generate video URL")
+        logger.error("get_video_url: S3 pre-sign error for move_id=%s — %s", move_id, exc)
+        return _log_response(_error(500, "Failed to generate video URL"))
 
-    return _ok({"url": url, "expiresIn": PRESIGNED_URL_EXPIRY, "moveId": move_id})
+    logger.info("get_video_url: pre-signed URL generated for move_id=%s", move_id)
+    return _log_response(_ok({"url": url, "expiresIn": PRESIGNED_URL_EXPIRY, "moveId": move_id}))
 
 
 def get_upload_url(event, context):
     """POST /videos/{moveId}/upload-url — generate a pre-signed PUT URL for uploading a video."""
     move_id = (event.get("pathParameters") or {}).get("moveId")
+    logger.info("get_upload_url called: move_id=%s", move_id)
     if not move_id:
-        return _bad_request("moveId path parameter is required")
+        logger.warning("get_upload_url: missing moveId path parameter")
+        return _log_response(_bad_request("moveId path parameter is required"))
 
     # Verify the move exists
     table = _get_moves_table()
     try:
         result = table.get_item(Key={"moveId": move_id})
     except ClientError as exc:
-        logger.error("DynamoDB error during get_upload_url: %s", exc)
-        return _error(500, "Failed to retrieve move")
+        logger.error("get_upload_url: DynamoDB error for move_id=%s — %s", move_id, exc)
+        return _log_response(_error(500, "Failed to retrieve move"))
 
     if not result.get("Item"):
-        return _not_found(f"Move '{move_id}' not found")
+        logger.warning("get_upload_url: move_id=%s not found", move_id)
+        return _log_response(_not_found(f"Move '{move_id}' not found"))
 
     video_key = f"videos/{move_id}/{uuid.uuid4()}.mp4"
+    logger.info("get_upload_url: generating pre-signed upload URL for move_id=%s, video_key=%s", move_id, video_key)
 
     s3 = _get_s3()
     try:
@@ -144,14 +160,43 @@ def get_upload_url(event, context):
             ExpiresIn=PRESIGNED_URL_EXPIRY,
         )
     except ClientError as exc:
-        logger.error("S3 pre-sign error during get_upload_url: %s", exc)
-        return _error(500, "Failed to generate upload URL")
+        logger.error("get_upload_url: S3 pre-sign error for move_id=%s — %s", move_id, exc)
+        return _log_response(_error(500, "Failed to generate upload URL"))
 
-    return _ok(
-        {
-            "uploadUrl": upload_url,
-            "videoKey": video_key,
-            "expiresIn": PRESIGNED_URL_EXPIRY,
-            "moveId": move_id,
-        }
+    logger.info("get_upload_url: pre-signed upload URL generated for move_id=%s", move_id)
+    return _log_response(
+        _ok(
+            {
+                "uploadUrl": upload_url,
+                "videoKey": video_key,
+                "expiresIn": PRESIGNED_URL_EXPIRY,
+                "moveId": move_id,
+            }
+        )
     )
+
+
+# ── Router ───────────────────────────────────────────────────────────────────
+
+def router(event, context):
+    """Route incoming requests to the appropriate handler based on path and method."""
+    path = event.get("path", "")
+    method = event.get("httpMethod", "").upper()
+
+    logger.info("router: path=%s, method=%s", path, method)
+
+    # Route based on path and method
+    if path.startswith("/videos/") and path.endswith("/url") and method == "GET":
+        return get_video_url(event, context)
+    elif path.startswith("/videos/") and path.endswith("/upload-url") and method == "POST":
+        return get_upload_url(event, context)
+    elif method == "OPTIONS":
+        # Handle CORS preflight requests
+        return {
+            "statusCode": 200,
+            "headers": CORS_HEADERS,
+            "body": "",
+        }
+    else:
+        logger.warning("router: unrecognized path=%s, method=%s", path, method)
+        return _log_response(_error(404, f"Endpoint {method} {path} not found"))

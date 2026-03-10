@@ -85,16 +85,23 @@ def _now_iso() -> str:
     return datetime.now(timezone.utc).isoformat()
 
 
+def _log_response(response: dict) -> dict:
+    """Log the HTTP status code of an outgoing response and return it unchanged."""
+    logger.info("Returning status %d", response["statusCode"])
+    return response
+
+
 # ── Handlers ─────────────────────────────────────────────────────────────────
 
 def list_moves(event, context):
     """GET /moves — return all moves."""
+    logger.info("list_moves called")
     table = _get_table()
     try:
         result = table.scan()
     except ClientError as exc:
-        logger.error("DynamoDB error during list_moves: %s", exc)
-        return _error(500, "Failed to retrieve moves")
+        logger.error("list_moves: DynamoDB scan failed — %s", exc)
+        return _log_response(_error(500, "Failed to retrieve moves"))
 
     items = result.get("Items", [])
     # Handle DynamoDB pagination
@@ -103,51 +110,62 @@ def list_moves(event, context):
             result = table.scan(ExclusiveStartKey=result["LastEvaluatedKey"])
             items.extend(result.get("Items", []))
         except ClientError as exc:
-            logger.error("DynamoDB pagination error: %s", exc)
+            logger.error("list_moves: DynamoDB pagination error — %s", exc)
             break
 
-    return _ok({"moves": items, "count": len(items)})
+    logger.info("list_moves: returning %d move(s)", len(items))
+    return _log_response(_ok({"moves": items, "count": len(items)}))
 
 
 def get_move(event, context):
     """GET /moves/{id} — return a single move by moveId."""
     move_id = (event.get("pathParameters") or {}).get("id")
+    logger.info("get_move called: move_id=%s", move_id)
     if not move_id:
-        return _bad_request("moveId path parameter is required")
+        logger.warning("get_move: missing moveId path parameter")
+        return _log_response(_bad_request("moveId path parameter is required"))
 
     table = _get_table()
     try:
         result = table.get_item(Key={"moveId": move_id})
     except ClientError as exc:
-        logger.error("DynamoDB error during get_move: %s", exc)
-        return _error(500, "Failed to retrieve move")
+        logger.error("get_move: DynamoDB error for move_id=%s — %s", move_id, exc)
+        return _log_response(_error(500, "Failed to retrieve move"))
 
     item = result.get("Item")
     if not item:
-        return _not_found(f"Move '{move_id}' not found")
+        logger.warning("get_move: move_id=%s not found", move_id)
+        return _log_response(_not_found(f"Move '{move_id}' not found"))
 
-    return _ok(item)
+    logger.info("get_move: found move_id=%s", move_id)
+    return _log_response(_ok(item))
 
 
 def create_move(event, context):
     """POST /moves — create a new move."""
+    logger.info("create_move called")
     try:
         body = _parse_body(event)
     except json.JSONDecodeError:
-        return _bad_request("Invalid JSON body")
+        logger.warning("create_move: invalid JSON body")
+        return _log_response(_bad_request("Invalid JSON body"))
 
     name = body.get("name", "").strip()
     if not name:
-        return _bad_request("name is required")
+        logger.warning("create_move: missing required field — name")
+        return _log_response(_bad_request("name is required"))
 
     difficulty = body.get("difficulty", "easy")
     if difficulty not in VALID_DIFFICULTIES:
-        return _bad_request(f"difficulty must be one of: {', '.join(sorted(VALID_DIFFICULTIES))}")
+        logger.warning("create_move: invalid difficulty=%s", difficulty)
+        return _log_response(_bad_request(f"difficulty must be one of: {', '.join(sorted(VALID_DIFFICULTIES))}"))
 
     category = body.get("category", "acrobalance")
     if category not in VALID_CATEGORIES:
-        return _bad_request(f"category must be one of: {', '.join(sorted(VALID_CATEGORIES))}")
+        logger.warning("create_move: invalid category=%s", category)
+        return _log_response(_bad_request(f"category must be one of: {', '.join(sorted(VALID_CATEGORIES))}"))
 
+    logger.info("create_move: name=%s, difficulty=%s, category=%s", name, difficulty, category)
     now = _now_iso()
     move = {
         "moveId": str(uuid.uuid4()),
@@ -165,22 +183,26 @@ def create_move(event, context):
     try:
         table.put_item(Item=move)
     except ClientError as exc:
-        logger.error("DynamoDB error during create_move: %s", exc)
-        return _error(500, "Failed to create move")
+        logger.error("create_move: DynamoDB error for name=%s — %s", name, exc)
+        return _log_response(_error(500, "Failed to create move"))
 
-    return _created(move)
+    logger.info("create_move: created move_id=%s, name=%s", move["moveId"], name)
+    return _log_response(_created(move))
 
 
 def update_move(event, context):
     """PUT /moves/{id} — update an existing move."""
     move_id = (event.get("pathParameters") or {}).get("id")
+    logger.info("update_move called: move_id=%s", move_id)
     if not move_id:
-        return _bad_request("moveId path parameter is required")
+        logger.warning("update_move: missing moveId path parameter")
+        return _log_response(_bad_request("moveId path parameter is required"))
 
     try:
         body = _parse_body(event)
     except json.JSONDecodeError:
-        return _bad_request("Invalid JSON body")
+        logger.warning("update_move: invalid JSON body for move_id=%s", move_id)
+        return _log_response(_bad_request("Invalid JSON body"))
 
     table = _get_table()
 
@@ -188,11 +210,12 @@ def update_move(event, context):
     try:
         existing = table.get_item(Key={"moveId": move_id})
     except ClientError as exc:
-        logger.error("DynamoDB error checking move existence: %s", exc)
-        return _error(500, "Failed to retrieve move")
+        logger.error("update_move: DynamoDB error checking existence of move_id=%s — %s", move_id, exc)
+        return _log_response(_error(500, "Failed to retrieve move"))
 
     if not existing.get("Item"):
-        return _not_found(f"Move '{move_id}' not found")
+        logger.warning("update_move: move_id=%s not found", move_id)
+        return _log_response(_not_found(f"Move '{move_id}' not found"))
 
     # Build update expression dynamically from provided fields
     updatable = ["name", "description", "difficulty", "category", "videoKey", "tags"]
@@ -203,12 +226,18 @@ def update_move(event, context):
     for field in updatable:
         if field in body:
             if field == "difficulty" and body[field] not in VALID_DIFFICULTIES:
-                return _bad_request(
-                    f"difficulty must be one of: {', '.join(sorted(VALID_DIFFICULTIES))}"
+                logger.warning("update_move: invalid difficulty=%s for move_id=%s", body[field], move_id)
+                return _log_response(
+                    _bad_request(
+                        f"difficulty must be one of: {', '.join(sorted(VALID_DIFFICULTIES))}"
+                    )
                 )
             if field == "category" and body[field] not in VALID_CATEGORIES:
-                return _bad_request(
-                    f"category must be one of: {', '.join(sorted(VALID_CATEGORIES))}"
+                logger.warning("update_move: invalid category=%s for move_id=%s", body[field], move_id)
+                return _log_response(
+                    _bad_request(
+                        f"category must be one of: {', '.join(sorted(VALID_CATEGORIES))}"
+                    )
                 )
             placeholder = f"#f_{field}"
             value_key = f":v_{field}"
@@ -221,6 +250,7 @@ def update_move(event, context):
     expr_names["#f_updatedAt"] = "updatedAt"
     expr_values[":v_updatedAt"] = _now_iso()
 
+    logger.info("update_move: updating fields=%s for move_id=%s", list(expr_names.values()), move_id)
     update_expression = "SET " + ", ".join(update_parts)
 
     try:
@@ -232,17 +262,20 @@ def update_move(event, context):
             ReturnValues="ALL_NEW",
         )
     except ClientError as exc:
-        logger.error("DynamoDB error during update_move: %s", exc)
-        return _error(500, "Failed to update move")
+        logger.error("update_move: DynamoDB error for move_id=%s — %s", move_id, exc)
+        return _log_response(_error(500, "Failed to update move"))
 
-    return _ok(result.get("Attributes", {}))
+    logger.info("update_move: successful for move_id=%s", move_id)
+    return _log_response(_ok(result.get("Attributes", {})))
 
 
 def delete_move(event, context):
     """DELETE /moves/{id} — delete a move."""
     move_id = (event.get("pathParameters") or {}).get("id")
+    logger.info("delete_move called: move_id=%s", move_id)
     if not move_id:
-        return _bad_request("moveId path parameter is required")
+        logger.warning("delete_move: missing moveId path parameter")
+        return _log_response(_bad_request("moveId path parameter is required"))
 
     table = _get_table()
 
@@ -250,16 +283,50 @@ def delete_move(event, context):
     try:
         existing = table.get_item(Key={"moveId": move_id})
     except ClientError as exc:
-        logger.error("DynamoDB error checking move existence: %s", exc)
-        return _error(500, "Failed to retrieve move")
+        logger.error("delete_move: DynamoDB error checking existence of move_id=%s — %s", move_id, exc)
+        return _log_response(_error(500, "Failed to retrieve move"))
 
     if not existing.get("Item"):
-        return _not_found(f"Move '{move_id}' not found")
+        logger.warning("delete_move: move_id=%s not found", move_id)
+        return _log_response(_not_found(f"Move '{move_id}' not found"))
 
     try:
         table.delete_item(Key={"moveId": move_id})
     except ClientError as exc:
-        logger.error("DynamoDB error during delete_move: %s", exc)
-        return _error(500, "Failed to delete move")
+        logger.error("delete_move: DynamoDB error for move_id=%s — %s", move_id, exc)
+        return _log_response(_error(500, "Failed to delete move"))
 
-    return _ok({"message": f"Move '{move_id}' deleted successfully"})
+    logger.info("delete_move: successfully deleted move_id=%s", move_id)
+    return _log_response(_ok({"message": f"Move '{move_id}' deleted successfully"}))
+
+
+# ── Router ───────────────────────────────────────────────────────────────────
+
+def router(event, context):
+    """Route incoming requests to the appropriate handler based on path and method."""
+    path = event.get("path", "")
+    method = event.get("httpMethod", "").upper()
+
+    logger.info("router: path=%s, method=%s", path, method)
+
+    # Route based on path and method
+    if path == "/moves" and method == "GET":
+        return list_moves(event, context)
+    elif path == "/moves" and method == "POST":
+        return create_move(event, context)
+    elif path.startswith("/moves/") and method == "GET":
+        return get_move(event, context)
+    elif path.startswith("/moves/") and method == "PUT":
+        return update_move(event, context)
+    elif path.startswith("/moves/") and method == "DELETE":
+        return delete_move(event, context)
+    elif method == "OPTIONS":
+        # Handle CORS preflight requests
+        return {
+            "statusCode": 200,
+            "headers": CORS_HEADERS,
+            "body": "",
+        }
+    else:
+        logger.warning("router: unrecognized path=%s, method=%s", path, method)
+        return _log_response(_error(404, f"Endpoint {method} {path} not found"))

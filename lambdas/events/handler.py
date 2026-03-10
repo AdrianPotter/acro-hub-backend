@@ -84,24 +84,37 @@ def _get_user_id(event: dict) -> str:
         return "unknown"
 
 
+def _log_response(response: dict) -> dict:
+    """Log the HTTP status code of an outgoing response and return it unchanged."""
+    logger.info("Returning status %d", response["statusCode"])
+    return response
+
+
 # ── Handlers ─────────────────────────────────────────────────────────────────
 
 def track_event(event, context):
     """POST /events — record a new operational event."""
+    logger.info("track_event called")
     try:
         body = _parse_body(event)
     except json.JSONDecodeError:
-        return _bad_request("Invalid JSON body")
+        logger.warning("track_event: invalid JSON body")
+        return _log_response(_bad_request("Invalid JSON body"))
 
     event_type = body.get("eventType", "").strip()
     if not event_type:
-        return _bad_request("eventType is required")
+        logger.warning("track_event: missing required field — eventType")
+        return _log_response(_bad_request("eventType is required"))
     if event_type not in VALID_EVENT_TYPES:
-        return _bad_request(
-            f"eventType must be one of: {', '.join(sorted(VALID_EVENT_TYPES))}"
+        logger.warning("track_event: invalid eventType=%s", event_type)
+        return _log_response(
+            _bad_request(
+                f"eventType must be one of: {', '.join(sorted(VALID_EVENT_TYPES))}"
+            )
         )
 
     user_id = _get_user_id(event)
+    logger.info("track_event: eventType=%s, userId=%s", event_type, user_id)
     timestamp = _now_iso()
 
     record = {
@@ -117,10 +130,11 @@ def track_event(event, context):
     try:
         table.put_item(Item=record)
     except ClientError as exc:
-        logger.error("DynamoDB error during track_event: %s", exc)
-        return _error(500, "Failed to record event")
+        logger.error("track_event: DynamoDB error for eventType=%s, userId=%s — %s", event_type, user_id, exc)
+        return _log_response(_error(500, "Failed to record event"))
 
-    return _created(record)
+    logger.info("track_event: recorded eventId=%s, eventType=%s, userId=%s", record["eventId"], event_type, user_id)
+    return _log_response(_created(record))
 
 
 def list_events(event, context):
@@ -132,11 +146,17 @@ def list_events(event, context):
     filter_from = params.get("from")
     filter_to = params.get("to")
 
+    logger.info(
+        "list_events called: userId=%s, eventType=%s, from=%s, to=%s",
+        filter_user_id, filter_event_type, filter_from, filter_to,
+    )
+
     table = _get_table()
 
     try:
         # Use GSI if filtering by userId
         if filter_user_id:
+            logger.info("list_events: using userId-timestamp GSI for userId=%s", filter_user_id)
             query_kwargs = {
                 "IndexName": "userId-timestamp-index",
                 "KeyConditionExpression": Key("userId").eq(filter_user_id),
@@ -161,6 +181,7 @@ def list_events(event, context):
                 items.extend(result.get("Items", []))
 
         elif filter_event_type:
+            logger.info("list_events: using eventType-timestamp GSI for eventType=%s", filter_event_type)
             # Use GSI for eventType filtering
             query_kwargs = {
                 "IndexName": "eventType-timestamp-index",
@@ -183,6 +204,7 @@ def list_events(event, context):
                 items.extend(result.get("Items", []))
 
         else:
+            logger.info("list_events: performing full table scan (no userId or eventType filter)")
             # Full scan with optional date range filter
             scan_kwargs: dict = {}
             filter_exprs = []
@@ -207,7 +229,34 @@ def list_events(event, context):
                 items.extend(result.get("Items", []))
 
     except ClientError as exc:
-        logger.error("DynamoDB error during list_events: %s", exc)
-        return _error(500, "Failed to retrieve events")
+        logger.error("list_events: DynamoDB error — %s", exc)
+        return _log_response(_error(500, "Failed to retrieve events"))
 
-    return _ok({"events": items, "count": len(items)})
+    logger.info("list_events: returning %d event(s)", len(items))
+    return _log_response(_ok({"events": items, "count": len(items)}))
+
+
+# ── Router ───────────────────────────────────────────────────────────────────
+
+def router(event, context):
+    """Route incoming requests to the appropriate handler based on path and method."""
+    path = event.get("path", "")
+    method = event.get("httpMethod", "").upper()
+
+    logger.info("router: path=%s, method=%s", path, method)
+
+    # Route based on path and method
+    if path == "/events" and method == "POST":
+        return track_event(event, context)
+    elif path == "/events" and method == "GET":
+        return list_events(event, context)
+    elif method == "OPTIONS":
+        # Handle CORS preflight requests
+        return {
+            "statusCode": 200,
+            "headers": CORS_HEADERS,
+            "body": "",
+        }
+    else:
+        logger.warning("router: unrecognized path=%s, method=%s", path, method)
+        return _log_response(_error(404, f"Endpoint {method} {path} not found"))

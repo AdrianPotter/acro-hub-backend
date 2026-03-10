@@ -306,5 +306,126 @@ class TestConfirmPassword(unittest.TestCase):
         self.assertEqual(resp["statusCode"], 400)
 
 
+# ── Logging tests ─────────────────────────────────────────────────────────────
+
+class TestAuthLogging(unittest.TestCase):
+    """Verify that each handler emits the expected log messages."""
+
+    def setUp(self):
+        auth_handler._cognito = None
+
+    @patch("boto3.client")
+    def test_login_logs_entry_and_response(self, mock_boto_client):
+        mock_cognito = MagicMock()
+        mock_boto_client.return_value = mock_cognito
+        mock_cognito.initiate_auth.return_value = {
+            "AuthenticationResult": {
+                "AccessToken": "tok",
+                "IdToken": "id",
+                "RefreshToken": "ref",
+                "ExpiresIn": 3600,
+                "TokenType": "Bearer",
+            }
+        }
+
+        with self.assertLogs("root", level="INFO") as cm:
+            auth_handler.login(_login_event(), None)
+
+        messages = "\n".join(cm.output)
+        self.assertIn("login called", messages)
+        self.assertIn("user@example.com", messages)
+        self.assertIn("Returning status 200", messages)
+
+    def test_login_logs_missing_fields_warning(self):
+        with self.assertLogs("root", level="WARNING") as cm:
+            auth_handler.login({"body": json.dumps({"email": "a@b.com"})}, None)
+
+        messages = "\n".join(cm.output)
+        self.assertIn("missing required field", messages)
+
+    @patch("boto3.client")
+    def test_register_logs_entry_with_email_and_name(self, mock_boto_client):
+        mock_cognito = MagicMock()
+        mock_boto_client.return_value = mock_cognito
+        mock_cognito.sign_up.return_value = {"UserSub": "sub-1", "UserConfirmed": False}
+
+        with self.assertLogs("root", level="INFO") as cm:
+            auth_handler.register(_register_event(), None)
+
+        messages = "\n".join(cm.output)
+        self.assertIn("register called", messages)
+        self.assertIn("new@example.com", messages)
+        self.assertIn("Alice", messages)
+        self.assertIn("Returning status 201", messages)
+
+    def test_register_logs_missing_fields_warning(self):
+        with self.assertLogs("root", level="INFO") as cm:
+            auth_handler.register({"body": json.dumps({"email": "x@x.com"})}, None)
+
+        messages = "\n".join(cm.output)
+        self.assertIn("missing required field", messages)
+        self.assertIn("Returning status 400", messages)
+
+    @patch("boto3.client")
+    def test_register_logs_duplicate_email_warning(self, mock_boto_client):
+        mock_cognito = MagicMock()
+        mock_boto_client.return_value = mock_cognito
+        mock_cognito.sign_up.side_effect = _client_error("UsernameExistsException")
+
+        with self.assertLogs("root", level="INFO") as cm:
+            auth_handler.register(_register_event(), None)
+
+        messages = "\n".join(cm.output)
+        self.assertIn("duplicate email", messages)
+        self.assertIn("Returning status 409", messages)
+
+    @patch("boto3.client")
+    def test_logout_logs_entry_and_success(self, mock_boto_client):
+        mock_cognito = MagicMock()
+        mock_boto_client.return_value = mock_cognito
+        mock_cognito.global_sign_out.return_value = {}
+
+        with self.assertLogs("root", level="INFO") as cm:
+            auth_handler.logout(_logout_event(), None)
+
+        messages = "\n".join(cm.output)
+        self.assertIn("logout called", messages)
+        self.assertIn("Returning status 200", messages)
+
+    def test_logout_logs_missing_token_warning(self):
+        with self.assertLogs("root", level="WARNING") as cm:
+            auth_handler.logout({"body": "{}", "headers": {}}, None)
+
+        messages = "\n".join(cm.output)
+        self.assertIn("missing Authorization", messages)
+
+    @patch("boto3.client")
+    def test_forgot_password_logs_enumeration_prevention(self, mock_boto_client):
+        mock_cognito = MagicMock()
+        mock_boto_client.return_value = mock_cognito
+        mock_cognito.forgot_password.side_effect = _client_error("UserNotFoundException")
+
+        with self.assertLogs("root", level="INFO") as cm:
+            resp = auth_handler.forgot_password(_forgot_event(), None)
+
+        self.assertEqual(resp["statusCode"], 200)
+        messages = "\n".join(cm.output)
+        self.assertIn("enumeration", messages)
+
+    @patch("boto3.client")
+    def test_confirm_password_logs_entry_and_response(self, mock_boto_client):
+        mock_cognito = MagicMock()
+        mock_boto_client.return_value = mock_cognito
+        mock_cognito.confirm_forgot_password.return_value = {}
+
+        with self.assertLogs("root", level="INFO") as cm:
+            auth_handler.confirm_password(_confirm_event(), None)
+
+        messages = "\n".join(cm.output)
+        self.assertIn("confirm_password called", messages)
+        self.assertIn("user@example.com", messages)
+        self.assertIn("Returning status 200", messages)
+
+
 if __name__ == "__main__":
     unittest.main()
