@@ -66,8 +66,8 @@ resource "aws_lambda_function" "auth" {
   function_name = "${var.app_name}-auth-${var.environment}"
   role          = aws_iam_role.auth_lambda.arn
   filename      = "${path.module}/../lambdas/auth/function.zip"
-  handler       = "handler.login"
-  runtime       = "python3.11"
+  handler       = "handler.router"
+  runtime       = "python3.14"
   timeout       = 30
   memory_size   = 256
 
@@ -122,8 +122,8 @@ resource "aws_lambda_function" "moves" {
   function_name = "${var.app_name}-moves-${var.environment}"
   role          = aws_iam_role.moves_lambda.arn
   filename      = "${path.module}/../lambdas/moves/function.zip"
-  handler       = "handler.list_moves"
-  runtime       = "python3.11"
+  handler       = "handler.router"
+  runtime       = "python3.14"
   timeout       = 30
   memory_size   = 256
 
@@ -178,8 +178,8 @@ resource "aws_lambda_function" "videos" {
   function_name = "${var.app_name}-videos-${var.environment}"
   role          = aws_iam_role.videos_lambda.arn
   filename      = "${path.module}/../lambdas/videos/function.zip"
-  handler       = "handler.get_video_url"
-  runtime       = "python3.11"
+  handler       = "handler.router"
+  runtime       = "python3.14"
   timeout       = 30
   memory_size   = 256
 
@@ -237,8 +237,8 @@ resource "aws_lambda_function" "events" {
   function_name = "${var.app_name}-events-${var.environment}"
   role          = aws_iam_role.events_lambda.arn
   filename      = "${path.module}/../lambdas/events/function.zip"
-  handler       = "handler.track_event"
-  runtime       = "python3.11"
+  handler       = "handler.router"
+  runtime       = "python3.14"
   timeout       = 30
   memory_size   = 256
 

@@ -174,3 +174,29 @@ def get_upload_url(event, context):
             }
         )
     )
+
+
+# ── Router ───────────────────────────────────────────────────────────────────
+
+def router(event, context):
+    """Route incoming requests to the appropriate handler based on path and method."""
+    path = event.get("path", "")
+    method = event.get("httpMethod", "").upper()
+
+    logger.info("router: path=%s, method=%s", path, method)
+
+    # Route based on path and method
+    if path.startswith("/videos/") and path.endswith("/url") and method == "GET":
+        return get_video_url(event, context)
+    elif path.startswith("/videos/") and path.endswith("/upload-url") and method == "POST":
+        return get_upload_url(event, context)
+    elif method == "OPTIONS":
+        # Handle CORS preflight requests
+        return {
+            "statusCode": 200,
+            "headers": CORS_HEADERS,
+            "body": "",
+        }
+    else:
+        logger.warning("router: unrecognized path=%s, method=%s", path, method)
+        return _log_response(_error(404, f"Endpoint {method} {path} not found"))

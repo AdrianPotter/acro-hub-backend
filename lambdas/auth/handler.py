@@ -286,3 +286,36 @@ def confirm_password(event, context):
 
     logger.info("confirm_password: successful for email=%s", email)
     return _log_response(_ok({"message": "Password reset successfully"}))
+
+
+# ── Router ───────────────────────────────────────────────────────────────────
+
+def router(event, context):
+    """Route incoming requests to the appropriate handler based on path and method."""
+    path = event.get("path", "")
+    method = event.get("httpMethod", "").upper()
+
+    logger.info("router: path=%s, method=%s", path, method)
+
+    # Route based on path and method
+    if path == "/auth/login" and method == "POST":
+        return login(event, context)
+    elif path == "/auth/register" and method == "POST":
+        return register(event, context)
+    elif path == "/auth/logout" and method == "POST":
+        return logout(event, context)
+    elif path == "/auth/forgot-password" and method == "POST":
+        return forgot_password(event, context)
+    elif path == "/auth/confirm-password" and method == "POST":
+        return confirm_password(event, context)
+    elif method == "OPTIONS":
+        # Handle CORS preflight requests
+        return {
+            "statusCode": 200,
+            "headers": CORS_HEADERS,
+            "body": "",
+        }
+    else:
+        logger.warning("router: unrecognized path=%s, method=%s", path, method)
+        return _log_response(_error(404, f"Endpoint {method} {path} not found"))
+

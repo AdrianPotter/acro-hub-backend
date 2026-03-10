@@ -234,3 +234,29 @@ def list_events(event, context):
 
     logger.info("list_events: returning %d event(s)", len(items))
     return _log_response(_ok({"events": items, "count": len(items)}))
+
+
+# ── Router ───────────────────────────────────────────────────────────────────
+
+def router(event, context):
+    """Route incoming requests to the appropriate handler based on path and method."""
+    path = event.get("path", "")
+    method = event.get("httpMethod", "").upper()
+
+    logger.info("router: path=%s, method=%s", path, method)
+
+    # Route based on path and method
+    if path == "/events" and method == "POST":
+        return track_event(event, context)
+    elif path == "/events" and method == "GET":
+        return list_events(event, context)
+    elif method == "OPTIONS":
+        # Handle CORS preflight requests
+        return {
+            "statusCode": 200,
+            "headers": CORS_HEADERS,
+            "body": "",
+        }
+    else:
+        logger.warning("router: unrecognized path=%s, method=%s", path, method)
+        return _log_response(_error(404, f"Endpoint {method} {path} not found"))

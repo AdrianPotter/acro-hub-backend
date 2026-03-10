@@ -298,3 +298,35 @@ def delete_move(event, context):
 
     logger.info("delete_move: successfully deleted move_id=%s", move_id)
     return _log_response(_ok({"message": f"Move '{move_id}' deleted successfully"}))
+
+
+# ── Router ───────────────────────────────────────────────────────────────────
+
+def router(event, context):
+    """Route incoming requests to the appropriate handler based on path and method."""
+    path = event.get("path", "")
+    method = event.get("httpMethod", "").upper()
+
+    logger.info("router: path=%s, method=%s", path, method)
+
+    # Route based on path and method
+    if path == "/moves" and method == "GET":
+        return list_moves(event, context)
+    elif path == "/moves" and method == "POST":
+        return create_move(event, context)
+    elif path.startswith("/moves/") and method == "GET":
+        return get_move(event, context)
+    elif path.startswith("/moves/") and method == "PUT":
+        return update_move(event, context)
+    elif path.startswith("/moves/") and method == "DELETE":
+        return delete_move(event, context)
+    elif method == "OPTIONS":
+        # Handle CORS preflight requests
+        return {
+            "statusCode": 200,
+            "headers": CORS_HEADERS,
+            "body": "",
+        }
+    else:
+        logger.warning("router: unrecognized path=%s, method=%s", path, method)
+        return _log_response(_error(404, f"Endpoint {method} {path} not found"))

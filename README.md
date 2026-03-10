@@ -43,7 +43,7 @@ Backend API for [Acro Hub](https://github.com/AdrianPotter/acro-hub-frontend) �
 
 ## Prerequisites
 
-- **Python 3.11** — runtime for all Lambda functions and local tests
+- **Python 3.14** — runtime for all Lambda functions and local tests
 - **pip** — Python package manager
 - **Terraform >= 1.5.0** — infrastructure provisioning
 - **AWS CLI** configured with credentials that have sufficient permissions
@@ -95,7 +95,7 @@ acro-hub-backend/
 ### 1. Create and activate a virtual environment
 
 ```bash
-python3.11 -m venv .venv
+python3.14 -m venv .venv
 source .venv/bin/activate          # macOS / Linux
 # .venv\Scripts\activate           # Windows
 ```
