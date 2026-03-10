@@ -66,6 +66,18 @@ components:
           format: email
           example: user@example.com
 
+    ConfirmRegistrationRequest:
+      type: object
+      required: [email, code]
+      properties:
+        email:
+          type: string
+          format: email
+          example: user@example.com
+        code:
+          type: string
+          example: "123456"
+
     ConfirmPasswordRequest:
       type: object
       required: [email, code, newPassword]
@@ -431,6 +443,43 @@ paths:
                 $ref: "#/components/schemas/MessageResponse"
         "400":
           description: Missing email
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /auth/confirm-registration:
+    post:
+      summary: Confirm a newly registered user with verification code
+      operationId: confirmRegistration
+      tags: [Authentication]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ConfirmRegistrationRequest"
+      responses:
+        "200":
+          description: Registration confirmed successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MessageResponse"
+        "400":
+          description: Invalid or expired verification code
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "409":
+          description: User is already confirmed
           content:
             application/json:
               schema:

@@ -52,6 +52,7 @@ resource "aws_iam_role_policy" "auth_lambda_cognito" {
         Action = [
           "cognito-idp:InitiateAuth",
           "cognito-idp:SignUp",
+          "cognito-idp:ConfirmSignUp",
           "cognito-idp:GlobalSignOut",
           "cognito-idp:ForgotPassword",
           "cognito-idp:ConfirmForgotPassword",

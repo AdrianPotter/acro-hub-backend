@@ -205,6 +205,54 @@ def register(event, context):
     )
 
 
+def confirm_registration(event, context):
+    """POST /auth/confirm-registration — confirm a newly registered user with a verification code."""
+    logger.info("confirm_registration called")
+    try:
+        body = _parse_body(event)
+    except json.JSONDecodeError:
+        logger.warning("confirm_registration: invalid JSON body")
+        return _log_response(_bad_request("Invalid JSON body"))
+
+    email = body.get("email")
+    code = body.get("code")
+    logger.info("confirm_registration: email=%s", email)
+    if not email or not code:
+        logger.warning(
+            "confirm_registration: missing required field(s) — email=%s, code_provided=%s",
+            email,
+            bool(code),
+        )
+        return _log_response(_bad_request("email and code are required"))
+
+    client = _get_client()
+    try:
+        client.confirm_sign_up(
+            ClientId=COGNITO_CLIENT_ID,
+            Username=email,
+            ConfirmationCode=code,
+        )
+    except ClientError as exc:
+        err_code = exc.response["Error"]["Code"]
+        if err_code == "CodeMismatchException":
+            logger.warning("confirm_registration: code mismatch for email=%s", email)
+            return _log_response(_error(400, "Invalid verification code"))
+        if err_code == "ExpiredCodeException":
+            logger.warning("confirm_registration: expired code for email=%s", email)
+            return _log_response(_error(400, "Verification code has expired"))
+        if err_code == "UserNotFoundException":
+            logger.warning("confirm_registration: user not found — email=%s", email)
+            return _log_response(_error(404, "User not found"))
+        if err_code == "NotAuthorizedException":
+            logger.warning("confirm_registration: user already confirmed for email=%s", email)
+            return _log_response(_error(409, "User is already confirmed"))
+        logger.error("confirm_registration: unexpected Cognito error for email=%s — %s", email, exc)
+        return _log_response(_error(500, "Registration confirmation error"))
+
+    logger.info("confirm_registration: successful for email=%s", email)
+    return _log_response(_ok({"message": "Registration confirmed successfully"}))
+
+
 def forgot_password(event, context):
     """POST /auth/forgot-password — initiate the Cognito forgot-password flow."""
     logger.info("forgot_password called")
@@ -306,6 +354,8 @@ def router(event, context):
         return logout(event, context)
     elif path == "/auth/forgot-password" and method == "POST":
         return forgot_password(event, context)
+    elif path == "/auth/confirm-registration" and method == "POST":
+        return confirm_registration(event, context)
     elif path == "/auth/confirm-password" and method == "POST":
         return confirm_password(event, context)
     elif method == "OPTIONS":
@@ -318,4 +368,3 @@ def router(event, context):
     else:
         logger.warning("router: unrecognized path=%s, method=%s", path, method)
         return _log_response(_error(404, f"Endpoint {method} {path} not found"))
-

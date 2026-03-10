@@ -43,6 +43,10 @@ def _confirm_event(email="user@example.com", code="123456", new_password="NewPas
     }
 
 
+def _confirm_registration_event(email="user@example.com", code="123456"):
+    return {"body": json.dumps({"email": email, "code": code})}
+
+
 def _client_error(code: str, message: str = "error"):
     from botocore.exceptions import ClientError
 
@@ -306,6 +310,62 @@ class TestConfirmPassword(unittest.TestCase):
         self.assertEqual(resp["statusCode"], 400)
 
 
+# ── Confirm registration tests ─────────────────────────────────────────────────
+
+class TestConfirmRegistration(unittest.TestCase):
+    def setUp(self):
+        auth_handler._cognito = None
+
+    @patch("boto3.client")
+    def test_confirm_registration_success(self, mock_boto_client):
+        mock_cognito = MagicMock()
+        mock_boto_client.return_value = mock_cognito
+        mock_cognito.confirm_sign_up.return_value = {}
+
+        resp = auth_handler.confirm_registration(_confirm_registration_event(), None)
+
+        self.assertEqual(resp["statusCode"], 200)
+        body = json.loads(resp["body"])
+        self.assertIn("confirmed", body["message"])
+
+    @patch("boto3.client")
+    def test_confirm_registration_wrong_code(self, mock_boto_client):
+        mock_cognito = MagicMock()
+        mock_boto_client.return_value = mock_cognito
+        mock_cognito.confirm_sign_up.side_effect = _client_error("CodeMismatchException")
+
+        resp = auth_handler.confirm_registration(
+            _confirm_registration_event(code="000000"), None
+        )
+
+        self.assertEqual(resp["statusCode"], 400)
+
+    @patch("boto3.client")
+    def test_confirm_registration_expired_code(self, mock_boto_client):
+        mock_cognito = MagicMock()
+        mock_boto_client.return_value = mock_cognito
+        mock_cognito.confirm_sign_up.side_effect = _client_error("ExpiredCodeException")
+
+        resp = auth_handler.confirm_registration(_confirm_registration_event(), None)
+
+        self.assertEqual(resp["statusCode"], 400)
+
+    @patch("boto3.client")
+    def test_confirm_registration_already_confirmed(self, mock_boto_client):
+        mock_cognito = MagicMock()
+        mock_boto_client.return_value = mock_cognito
+        mock_cognito.confirm_sign_up.side_effect = _client_error("NotAuthorizedException")
+
+        resp = auth_handler.confirm_registration(_confirm_registration_event(), None)
+
+        self.assertEqual(resp["statusCode"], 409)
+
+    def test_confirm_registration_missing_fields(self):
+        event = {"body": json.dumps({"email": "u@example.com"})}
+        resp = auth_handler.confirm_registration(event, None)
+        self.assertEqual(resp["statusCode"], 400)
+
+
 # ── Logging tests ─────────────────────────────────────────────────────────────
 
 class TestAuthLogging(unittest.TestCase):
@@ -423,6 +483,20 @@ class TestAuthLogging(unittest.TestCase):
 
         messages = "\n".join(cm.output)
         self.assertIn("confirm_password called", messages)
+        self.assertIn("user@example.com", messages)
+        self.assertIn("Returning status 200", messages)
+
+    @patch("boto3.client")
+    def test_confirm_registration_logs_entry_and_response(self, mock_boto_client):
+        mock_cognito = MagicMock()
+        mock_boto_client.return_value = mock_cognito
+        mock_cognito.confirm_sign_up.return_value = {}
+
+        with self.assertLogs("root", level="INFO") as cm:
+            auth_handler.confirm_registration(_confirm_registration_event(), None)
+
+        messages = "\n".join(cm.output)
+        self.assertIn("confirm_registration called", messages)
         self.assertIn("user@example.com", messages)
         self.assertIn("Returning status 200", messages)
 
