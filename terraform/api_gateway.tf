@@ -950,12 +950,55 @@ resource "aws_api_gateway_integration_response" "events_options" {
   }
 }
 
+# ── Gateway Responses (CORS on auth errors) ───────────────────────────────────
+#
+# When API Gateway rejects a request at the authorizer level (missing/invalid
+# JWT), it generates a 401 or 403 response itself — before the Lambda
+# integration is ever called.  These gateway-level responses do not
+# automatically inherit the CORS headers that the Lambda would have returned,
+# so browsers block them with "No Access-Control-Allow-Origin header present".
+#
+# The resources below attach the necessary CORS headers to those gateway-
+# generated error responses so that the browser can read the error body.
+
+resource "aws_api_gateway_gateway_response" "unauthorized" {
+  rest_api_id   = aws_api_gateway_rest_api.acro_hub.id
+  response_type = "UNAUTHORIZED"
+  status_code   = "401"
+
+  response_parameters = {
+    "gatewayresponse.header.Access-Control-Allow-Origin"  = "'*'"
+    "gatewayresponse.header.Access-Control-Allow-Headers" = "'Content-Type,Authorization'"
+    "gatewayresponse.header.Access-Control-Allow-Methods" = "'OPTIONS,GET,POST,PUT,DELETE'"
+  }
+
+  response_templates = {
+    "application/json" = "{\"message\": $context.error.messageString}"
+  }
+}
+
+resource "aws_api_gateway_gateway_response" "access_denied" {
+  rest_api_id   = aws_api_gateway_rest_api.acro_hub.id
+  response_type = "ACCESS_DENIED"
+  status_code   = "403"
+
+  response_parameters = {
+    "gatewayresponse.header.Access-Control-Allow-Origin"  = "'*'"
+    "gatewayresponse.header.Access-Control-Allow-Headers" = "'Content-Type,Authorization'"
+    "gatewayresponse.header.Access-Control-Allow-Methods" = "'OPTIONS,GET,POST,PUT,DELETE'"
+  }
+
+  response_templates = {
+    "application/json" = "{\"message\": $context.error.messageString}"
+  }
+}
+
 # ── Deployment & Stage ────────────────────────────────────────────────────────
 
 resource "aws_api_gateway_deployment" "acro_hub" {
   rest_api_id = aws_api_gateway_rest_api.acro_hub.id
 
-  # Force redeploy when any method/integration changes
+  # Force redeploy when any method/integration/gateway-response changes
   triggers = {
     redeployment = sha1(jsonencode([
       aws_api_gateway_method.auth_login_post,
@@ -973,6 +1016,8 @@ resource "aws_api_gateway_deployment" "acro_hub" {
       aws_api_gateway_method.videos_upload_post,
       aws_api_gateway_method.events_get,
       aws_api_gateway_method.events_post,
+      aws_api_gateway_gateway_response.unauthorized,
+      aws_api_gateway_gateway_response.access_denied,
     ]))
   }
 
