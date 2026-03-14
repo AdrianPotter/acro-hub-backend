@@ -168,7 +168,7 @@ resource "aws_iam_role_policy" "videos_lambda_s3_dynamodb" {
       },
       {
         Effect   = "Allow"
-        Action   = ["dynamodb:GetItem"]
+        Action   = ["dynamodb:GetItem", "dynamodb:UpdateItem"]
         Resource = aws_dynamodb_table.moves.arn
       }
     ]

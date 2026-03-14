@@ -164,6 +164,19 @@ def get_upload_url(event, context):
         return _log_response(_error(500, "Failed to generate upload URL"))
 
     logger.info("get_upload_url: pre-signed upload URL generated for move_id=%s", move_id)
+
+    # Persist the videoKey to DynamoDB so get_video_url can locate the object later
+    try:
+        table.update_item(
+            Key={"moveId": move_id},
+            UpdateExpression="SET videoKey = :vk",
+            ExpressionAttributeValues={":vk": video_key},
+        )
+    except ClientError as exc:
+        logger.error("get_upload_url: DynamoDB update error for move_id=%s — %s", move_id, exc)
+        return _log_response(_error(500, "Failed to persist video key"))
+
+    logger.info("get_upload_url: videoKey persisted to DynamoDB for move_id=%s", move_id)
     return _log_response(
         _ok(
             {

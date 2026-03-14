@@ -137,6 +137,15 @@ class TestGetUploadUrl(unittest.TestCase):
         call_args = mock_s3.generate_presigned_url.call_args
         self.assertEqual(call_args[0][0], "put_object")
 
+        # Verify videoKey was persisted to DynamoDB
+        mock_table.update_item.assert_called_once()
+        update_call = mock_table.update_item.call_args
+        self.assertEqual(update_call.kwargs["Key"], {"moveId": "move-abc"})
+        self.assertIn(":vk", update_call.kwargs["ExpressionAttributeValues"])
+        persisted_key = update_call.kwargs["ExpressionAttributeValues"][":vk"]
+        self.assertTrue(persisted_key.startswith("videos/move-abc/"))
+        self.assertTrue(persisted_key.endswith(".mp4"))
+
     @patch("boto3.resource")
     @patch("boto3.client")
     def test_get_upload_url_move_not_found(self, mock_boto_client, mock_boto_resource):
@@ -169,6 +178,24 @@ class TestGetUploadUrl(unittest.TestCase):
         resp = videos_handler.get_upload_url(_move_id_event("move-abc"), None)
 
         self.assertEqual(resp["statusCode"], 500)
+
+    @patch("boto3.resource")
+    @patch("boto3.client")
+    def test_get_upload_url_dynamodb_update_error(self, mock_boto_client, mock_boto_resource):
+        mock_s3 = MagicMock()
+        mock_boto_client.return_value = mock_s3
+        mock_s3.generate_presigned_url.return_value = "https://s3.example.com/upload-signed"
+
+        mock_table = MagicMock()
+        mock_boto_resource.return_value.Table.return_value = mock_table
+        mock_table.get_item.return_value = {"Item": SAMPLE_MOVE}
+        mock_table.update_item.side_effect = _client_error("ValidationException")
+
+        resp = videos_handler.get_upload_url(_move_id_event("move-abc"), None)
+
+        self.assertEqual(resp["statusCode"], 500)
+        body = json.loads(resp["body"])
+        self.assertIn("persist", body["error"])
 
 
 # ── Logging tests ─────────────────────────────────────────────────────────────
