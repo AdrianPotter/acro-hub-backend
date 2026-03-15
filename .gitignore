@@ -85,3 +85,6 @@ out/
 Thumbs.db
 ehthumbs.db
 Desktop.ini
+
+# ── Data migration ───────────────────────────────────────────────────────────
+migration/videos/*
