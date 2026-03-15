@@ -124,10 +124,7 @@ def main() -> None:
 
         move_data = {
             "name": name,
-            "description": "",
             "difficulty": difficulty,
-            "tags": [],
-            "category": None,
             "videoKey": video_key,
         }
 
