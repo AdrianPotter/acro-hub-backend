@@ -34,7 +34,7 @@ def _get_table():
 CORS_HEADERS = {
     "Access-Control-Allow-Origin": "*",
     "Access-Control-Allow-Headers": "Content-Type,Authorization",
-    "Access-Control-Allow-Methods": "OPTIONS,POST,GET,PUT,DELETE",
+    "Access-Control-Allow-Methods": "OPTIONS,POST,GET,PUT,PATCH,DELETE",
     "Content-Type": "application/json",
 }
 
@@ -360,6 +360,8 @@ def router(event, context):
     elif path.startswith("/moves/") and method == "GET":
         return get_move(event, context)
     elif path.startswith("/moves/") and method == "PUT":
+        return update_move(event, context)
+    elif path.startswith("/moves/") and method == "PATCH":
         return update_move(event, context)
     elif path.startswith("/moves/") and method == "DELETE":
         return delete_move(event, context)
