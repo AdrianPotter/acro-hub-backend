@@ -30,15 +30,34 @@ SAMPLE_MOVE = {
 }
 
 
-def _create_event(body: dict):
-    return {"body": json.dumps(body), "pathParameters": None}
-
-
-def _id_event(move_id: str, body: dict | None = None):
+def _claims_context(groups: list[str] | None = None) -> dict:
+    """Build a requestContext dict with Cognito claims for the given groups."""
     return {
+        "requestContext": {
+            "authorizer": {
+                "claims": {
+                    "cognito:groups": ",".join(groups or []),
+                }
+            }
+        }
+    }
+
+
+def _create_event(body: dict, groups: list[str] | None = None):
+    event = {"body": json.dumps(body), "pathParameters": None}
+    if groups is not None:
+        event.update(_claims_context(groups))
+    return event
+
+
+def _id_event(move_id: str, body: dict | None = None, groups: list[str] | None = None):
+    event = {
         "pathParameters": {"id": move_id},
         "body": json.dumps(body) if body else "{}",
     }
+    if groups is not None:
+        event.update(_claims_context(groups))
+    return event
 
 
 def _client_error(code: str, message: str = "error"):
@@ -151,7 +170,7 @@ class TestCreateMove(unittest.TestCase):
             "category": "acrobalance",
             "tags": ["beginner"],
         }
-        resp = moves_handler.create_move(_create_event(payload), None)
+        resp = moves_handler.create_move(_create_event(payload, groups=["contributors"]), None)
 
         self.assertEqual(resp["statusCode"], 201)
         body = json.loads(resp["body"])
@@ -160,24 +179,58 @@ class TestCreateMove(unittest.TestCase):
         mock_table.put_item.assert_called_once()
 
     def test_create_move_missing_name(self):
-        resp = moves_handler.create_move(_create_event({"difficulty": "easy"}), None)
+        resp = moves_handler.create_move(_create_event({"difficulty": "easy"}, groups=["curators"]), None)
         self.assertEqual(resp["statusCode"], 400)
 
     def test_create_move_invalid_difficulty(self):
         resp = moves_handler.create_move(
-            _create_event({"name": "Test", "difficulty": "impossible"}), None
+            _create_event({"name": "Test", "difficulty": "impossible"}, groups=["curators"]), None
         )
         self.assertEqual(resp["statusCode"], 400)
 
     def test_create_move_invalid_category(self):
         resp = moves_handler.create_move(
-            _create_event({"name": "Test", "category": "ballet"}), None
+            _create_event({"name": "Test", "category": "ballet"}, groups=["admins"]), None
         )
         self.assertEqual(resp["statusCode"], 400)
 
     def test_create_move_invalid_json(self):
-        resp = moves_handler.create_move({"body": "bad-json", "pathParameters": None}, None)
+        event = {"body": "bad-json", "pathParameters": None}
+        event.update(_claims_context(["contributors"]))
+        resp = moves_handler.create_move(event, None)
         self.assertEqual(resp["statusCode"], 400)
+
+    def test_create_move_forbidden_no_group(self):
+        resp = moves_handler.create_move(_create_event({"name": "Star"}, groups=[]), None)
+        self.assertEqual(resp["statusCode"], 403)
+
+    def test_create_move_forbidden_wrong_group(self):
+        resp = moves_handler.create_move(_create_event({"name": "Star"}, groups=["viewers"]), None)
+        self.assertEqual(resp["statusCode"], 403)
+
+    @patch("boto3.resource")
+    def test_create_move_allowed_contributor(self, mock_resource):
+        mock_table = MagicMock()
+        mock_resource.return_value.Table.return_value = mock_table
+        mock_table.put_item.return_value = {}
+        resp = moves_handler.create_move(_create_event({"name": "Star"}, groups=["contributors"]), None)
+        self.assertEqual(resp["statusCode"], 201)
+
+    @patch("boto3.resource")
+    def test_create_move_allowed_curator(self, mock_resource):
+        mock_table = MagicMock()
+        mock_resource.return_value.Table.return_value = mock_table
+        mock_table.put_item.return_value = {}
+        resp = moves_handler.create_move(_create_event({"name": "Star"}, groups=["curators"]), None)
+        self.assertEqual(resp["statusCode"], 201)
+
+    @patch("boto3.resource")
+    def test_create_move_allowed_admin(self, mock_resource):
+        mock_table = MagicMock()
+        mock_resource.return_value.Table.return_value = mock_table
+        mock_table.put_item.return_value = {}
+        resp = moves_handler.create_move(_create_event({"name": "Star"}, groups=["admins"]), None)
+        self.assertEqual(resp["statusCode"], 201)
 
 
 # ── Update move ───────────────────────────────────────────────────────────────
@@ -195,7 +248,7 @@ class TestUpdateMove(unittest.TestCase):
         mock_table.get_item.return_value = {"Item": SAMPLE_MOVE}
         mock_table.update_item.return_value = {"Attributes": updated}
 
-        resp = moves_handler.update_move(_id_event("move-123", {"name": "Super Star"}), None)
+        resp = moves_handler.update_move(_id_event("move-123", {"name": "Super Star"}, groups=["curators"]), None)
 
         self.assertEqual(resp["statusCode"], 200)
         body = json.loads(resp["body"])
@@ -207,13 +260,41 @@ class TestUpdateMove(unittest.TestCase):
         mock_resource.return_value.Table.return_value = mock_table
         mock_table.get_item.return_value = {}
 
-        resp = moves_handler.update_move(_id_event("missing", {"name": "X"}), None)
+        resp = moves_handler.update_move(_id_event("missing", {"name": "X"}, groups=["admins"]), None)
 
         self.assertEqual(resp["statusCode"], 404)
 
     def test_update_move_missing_id(self):
-        resp = moves_handler.update_move({"pathParameters": None, "body": "{}"}, None)
+        event = {"pathParameters": None, "body": "{}"}
+        event.update(_claims_context(["curators"]))
+        resp = moves_handler.update_move(event, None)
         self.assertEqual(resp["statusCode"], 400)
+
+    def test_update_move_forbidden_no_group(self):
+        resp = moves_handler.update_move(_id_event("move-123", {"name": "X"}, groups=[]), None)
+        self.assertEqual(resp["statusCode"], 403)
+
+    def test_update_move_forbidden_contributor(self):
+        resp = moves_handler.update_move(_id_event("move-123", {"name": "X"}, groups=["contributors"]), None)
+        self.assertEqual(resp["statusCode"], 403)
+
+    @patch("boto3.resource")
+    def test_update_move_allowed_curator(self, mock_resource):
+        mock_table = MagicMock()
+        mock_resource.return_value.Table.return_value = mock_table
+        mock_table.get_item.return_value = {"Item": SAMPLE_MOVE}
+        mock_table.update_item.return_value = {"Attributes": SAMPLE_MOVE}
+        resp = moves_handler.update_move(_id_event("move-123", {"name": "X"}, groups=["curators"]), None)
+        self.assertEqual(resp["statusCode"], 200)
+
+    @patch("boto3.resource")
+    def test_update_move_allowed_admin(self, mock_resource):
+        mock_table = MagicMock()
+        mock_resource.return_value.Table.return_value = mock_table
+        mock_table.get_item.return_value = {"Item": SAMPLE_MOVE}
+        mock_table.update_item.return_value = {"Attributes": SAMPLE_MOVE}
+        resp = moves_handler.update_move(_id_event("move-123", {"name": "X"}, groups=["admins"]), None)
+        self.assertEqual(resp["statusCode"], 200)
 
 
 # ── Delete move ───────────────────────────────────────────────────────────────
@@ -230,7 +311,7 @@ class TestDeleteMove(unittest.TestCase):
         mock_table.get_item.return_value = {"Item": SAMPLE_MOVE}
         mock_table.delete_item.return_value = {}
 
-        resp = moves_handler.delete_move(_id_event("move-123"), None)
+        resp = moves_handler.delete_move(_id_event("move-123", groups=["curators"]), None)
 
         self.assertEqual(resp["statusCode"], 200)
         body = json.loads(resp["body"])
@@ -243,13 +324,41 @@ class TestDeleteMove(unittest.TestCase):
         mock_resource.return_value.Table.return_value = mock_table
         mock_table.get_item.return_value = {}
 
-        resp = moves_handler.delete_move(_id_event("ghost"), None)
+        resp = moves_handler.delete_move(_id_event("ghost", groups=["admins"]), None)
 
         self.assertEqual(resp["statusCode"], 404)
 
     def test_delete_move_missing_id(self):
-        resp = moves_handler.delete_move({"pathParameters": None}, None)
+        event = {"pathParameters": None}
+        event.update(_claims_context(["curators"]))
+        resp = moves_handler.delete_move(event, None)
         self.assertEqual(resp["statusCode"], 400)
+
+    def test_delete_move_forbidden_no_group(self):
+        resp = moves_handler.delete_move(_id_event("move-123", groups=[]), None)
+        self.assertEqual(resp["statusCode"], 403)
+
+    def test_delete_move_forbidden_contributor(self):
+        resp = moves_handler.delete_move(_id_event("move-123", groups=["contributors"]), None)
+        self.assertEqual(resp["statusCode"], 403)
+
+    @patch("boto3.resource")
+    def test_delete_move_allowed_curator(self, mock_resource):
+        mock_table = MagicMock()
+        mock_resource.return_value.Table.return_value = mock_table
+        mock_table.get_item.return_value = {"Item": SAMPLE_MOVE}
+        mock_table.delete_item.return_value = {}
+        resp = moves_handler.delete_move(_id_event("move-123", groups=["curators"]), None)
+        self.assertEqual(resp["statusCode"], 200)
+
+    @patch("boto3.resource")
+    def test_delete_move_allowed_admin(self, mock_resource):
+        mock_table = MagicMock()
+        mock_resource.return_value.Table.return_value = mock_table
+        mock_table.get_item.return_value = {"Item": SAMPLE_MOVE}
+        mock_table.delete_item.return_value = {}
+        resp = moves_handler.delete_move(_id_event("move-123", groups=["admins"]), None)
+        self.assertEqual(resp["statusCode"], 200)
 
 
 # ── Logging tests ─────────────────────────────────────────────────────────────
@@ -295,11 +404,11 @@ class TestMovesLogging(unittest.TestCase):
         mock_resource.return_value.Table.return_value = mock_table
         mock_table.put_item.return_value = {}
 
+        event = {"body": json.dumps({"name": "Throne", "difficulty": "hard", "category": "acrobalance"})}
+        event.update(_claims_context(["contributors"]))
+
         with self.assertLogs("root", level="INFO") as cm:
-            moves_handler.create_move(
-                {"body": json.dumps({"name": "Throne", "difficulty": "hard", "category": "acrobalance"})},
-                None,
-            )
+            moves_handler.create_move(event, None)
 
         messages = "\n".join(cm.output)
         self.assertIn("Throne", messages)
@@ -315,7 +424,7 @@ class TestMovesLogging(unittest.TestCase):
         mock_table.delete_item.return_value = {}
 
         with self.assertLogs("root", level="INFO") as cm:
-            moves_handler.delete_move(_id_event("move-123"), None)
+            moves_handler.delete_move(_id_event("move-123", groups=["curators"]), None)
 
         messages = "\n".join(cm.output)
         self.assertIn("delete_move called", messages)

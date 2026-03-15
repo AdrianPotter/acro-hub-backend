@@ -81,6 +81,30 @@ def _log_response(response: dict) -> dict:
     return response
 
 
+def _get_user_groups(event: dict) -> set:
+    """Extract Cognito group memberships from the JWT claims in the request context."""
+    claims = (
+        (event.get("requestContext") or {})
+        .get("authorizer", {})
+        .get("claims", {})
+    )
+    groups_str = claims.get("cognito:groups", "")
+    if not groups_str:
+        return set()
+    return set(groups_str.split(","))
+
+
+def _forbidden(message: str = "You do not have permission to perform this action") -> dict:
+    return {
+        "statusCode": 403,
+        "headers": CORS_HEADERS,
+        "body": json.dumps({"error": message}),
+    }
+
+
+UPLOAD_GROUPS = {"contributors", "curators", "admins"}
+
+
 # ── Handlers ─────────────────────────────────────────────────────────────────
 
 def get_video_url(event, context):
@@ -129,6 +153,12 @@ def get_upload_url(event, context):
     """POST /videos/{moveId}/upload-url — generate a pre-signed PUT URL for uploading a video."""
     move_id = (event.get("pathParameters") or {}).get("moveId")
     logger.info("get_upload_url called: move_id=%s", move_id)
+
+    user_groups = _get_user_groups(event)
+    if not user_groups.intersection(UPLOAD_GROUPS):
+        logger.warning("get_upload_url: forbidden — user groups=%s", user_groups)
+        return _log_response(_forbidden())
+
     if not move_id:
         logger.warning("get_upload_url: missing moveId path parameter")
         return _log_response(_bad_request("moveId path parameter is required"))
