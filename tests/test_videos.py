@@ -30,8 +30,17 @@ MOVE_WITHOUT_VIDEO = {
 }
 
 
-def _move_id_event(move_id: str):
-    return {"pathParameters": {"moveId": move_id}}
+def _move_id_event(move_id: str, groups: list[str] | None = None):
+    event = {"pathParameters": {"moveId": move_id}}
+    if groups is not None:
+        event["requestContext"] = {
+            "authorizer": {
+                "claims": {
+                    "cognito:groups": ",".join(groups),
+                }
+            }
+        }
+    return event
 
 
 def _client_error(code: str):
@@ -123,7 +132,7 @@ class TestGetUploadUrl(unittest.TestCase):
         mock_boto_resource.return_value.Table.return_value = mock_table
         mock_table.get_item.return_value = {"Item": SAMPLE_MOVE}
 
-        resp = videos_handler.get_upload_url(_move_id_event("move-abc"), None)
+        resp = videos_handler.get_upload_url(_move_id_event("move-abc", groups=["contributors"]), None)
 
         self.assertEqual(resp["statusCode"], 200)
         body = json.loads(resp["body"])
@@ -156,12 +165,13 @@ class TestGetUploadUrl(unittest.TestCase):
         mock_boto_resource.return_value.Table.return_value = mock_table
         mock_table.get_item.return_value = {}
 
-        resp = videos_handler.get_upload_url(_move_id_event("missing"), None)
+        resp = videos_handler.get_upload_url(_move_id_event("missing", groups=["curators"]), None)
 
         self.assertEqual(resp["statusCode"], 404)
 
     def test_get_upload_url_missing_move_id(self):
-        resp = videos_handler.get_upload_url({"pathParameters": None}, None)
+        event = {"pathParameters": None, "requestContext": {"authorizer": {"claims": {"cognito:groups": "contributors"}}}}
+        resp = videos_handler.get_upload_url(event, None)
         self.assertEqual(resp["statusCode"], 400)
 
     @patch("boto3.resource")
@@ -175,7 +185,7 @@ class TestGetUploadUrl(unittest.TestCase):
         mock_table.get_item.return_value = {"Item": SAMPLE_MOVE}
         mock_s3.generate_presigned_url.side_effect = _client_error("AccessDenied")
 
-        resp = videos_handler.get_upload_url(_move_id_event("move-abc"), None)
+        resp = videos_handler.get_upload_url(_move_id_event("move-abc", groups=["admins"]), None)
 
         self.assertEqual(resp["statusCode"], 500)
 
@@ -191,11 +201,55 @@ class TestGetUploadUrl(unittest.TestCase):
         mock_table.get_item.return_value = {"Item": SAMPLE_MOVE}
         mock_table.update_item.side_effect = _client_error("ValidationException")
 
-        resp = videos_handler.get_upload_url(_move_id_event("move-abc"), None)
+        resp = videos_handler.get_upload_url(_move_id_event("move-abc", groups=["curators"]), None)
 
         self.assertEqual(resp["statusCode"], 500)
         body = json.loads(resp["body"])
         self.assertIn("persist", body["error"])
+
+    def test_get_upload_url_forbidden_no_group(self):
+        resp = videos_handler.get_upload_url(_move_id_event("move-abc", groups=[]), None)
+        self.assertEqual(resp["statusCode"], 403)
+
+    def test_get_upload_url_forbidden_wrong_group(self):
+        resp = videos_handler.get_upload_url(_move_id_event("move-abc", groups=["viewers"]), None)
+        self.assertEqual(resp["statusCode"], 403)
+
+    @patch("boto3.resource")
+    @patch("boto3.client")
+    def test_get_upload_url_allowed_contributor(self, mock_boto_client, mock_boto_resource):
+        mock_s3 = MagicMock()
+        mock_boto_client.return_value = mock_s3
+        mock_s3.generate_presigned_url.return_value = "https://s3.example.com/upload-signed"
+        mock_table = MagicMock()
+        mock_boto_resource.return_value.Table.return_value = mock_table
+        mock_table.get_item.return_value = {"Item": SAMPLE_MOVE}
+        resp = videos_handler.get_upload_url(_move_id_event("move-abc", groups=["contributors"]), None)
+        self.assertEqual(resp["statusCode"], 200)
+
+    @patch("boto3.resource")
+    @patch("boto3.client")
+    def test_get_upload_url_allowed_curator(self, mock_boto_client, mock_boto_resource):
+        mock_s3 = MagicMock()
+        mock_boto_client.return_value = mock_s3
+        mock_s3.generate_presigned_url.return_value = "https://s3.example.com/upload-signed"
+        mock_table = MagicMock()
+        mock_boto_resource.return_value.Table.return_value = mock_table
+        mock_table.get_item.return_value = {"Item": SAMPLE_MOVE}
+        resp = videos_handler.get_upload_url(_move_id_event("move-abc", groups=["curators"]), None)
+        self.assertEqual(resp["statusCode"], 200)
+
+    @patch("boto3.resource")
+    @patch("boto3.client")
+    def test_get_upload_url_allowed_admin(self, mock_boto_client, mock_boto_resource):
+        mock_s3 = MagicMock()
+        mock_boto_client.return_value = mock_s3
+        mock_s3.generate_presigned_url.return_value = "https://s3.example.com/upload-signed"
+        mock_table = MagicMock()
+        mock_boto_resource.return_value.Table.return_value = mock_table
+        mock_table.get_item.return_value = {"Item": SAMPLE_MOVE}
+        resp = videos_handler.get_upload_url(_move_id_event("move-abc", groups=["admins"]), None)
+        self.assertEqual(resp["statusCode"], 200)
 
 
 # ── Logging tests ─────────────────────────────────────────────────────────────
@@ -251,7 +305,7 @@ class TestVideosLogging(unittest.TestCase):
         mock_s3.generate_presigned_url.return_value = "https://upload-url"
 
         with self.assertLogs("root", level="INFO") as cm:
-            videos_handler.get_upload_url(_move_id_event("move-abc"), None)
+            videos_handler.get_upload_url(_move_id_event("move-abc", groups=["contributors"]), None)
 
         messages = "\n".join(cm.output)
         self.assertIn("get_upload_url called", messages)

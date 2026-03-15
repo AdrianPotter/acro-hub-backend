@@ -91,6 +91,31 @@ def _log_response(response: dict) -> dict:
     return response
 
 
+def _get_user_groups(event: dict) -> set:
+    """Extract Cognito group memberships from the JWT claims in the request context."""
+    claims = (
+        (event.get("requestContext") or {})
+        .get("authorizer", {})
+        .get("claims", {})
+    )
+    groups_str = claims.get("cognito:groups", "")
+    if not groups_str:
+        return set()
+    return set(groups_str.split(","))
+
+
+def _forbidden(message: str = "You do not have permission to perform this action") -> dict:
+    return {
+        "statusCode": 403,
+        "headers": CORS_HEADERS,
+        "body": json.dumps({"error": message}),
+    }
+
+
+UPLOAD_GROUPS = {"contributors", "curators", "admins"}
+EDIT_DELETE_GROUPS = {"curators", "admins"}
+
+
 # ── Handlers ─────────────────────────────────────────────────────────────────
 
 def list_moves(event, context):
@@ -144,6 +169,12 @@ def get_move(event, context):
 def create_move(event, context):
     """POST /moves — create a new move."""
     logger.info("create_move called")
+
+    user_groups = _get_user_groups(event)
+    if not user_groups.intersection(UPLOAD_GROUPS):
+        logger.warning("create_move: forbidden — user groups=%s", user_groups)
+        return _log_response(_forbidden())
+
     try:
         body = _parse_body(event)
     except json.JSONDecodeError:
@@ -194,6 +225,12 @@ def update_move(event, context):
     """PUT /moves/{id} — update an existing move."""
     move_id = (event.get("pathParameters") or {}).get("id")
     logger.info("update_move called: move_id=%s", move_id)
+
+    user_groups = _get_user_groups(event)
+    if not user_groups.intersection(EDIT_DELETE_GROUPS):
+        logger.warning("update_move: forbidden — user groups=%s", user_groups)
+        return _log_response(_forbidden())
+
     if not move_id:
         logger.warning("update_move: missing moveId path parameter")
         return _log_response(_bad_request("moveId path parameter is required"))
@@ -273,6 +310,12 @@ def delete_move(event, context):
     """DELETE /moves/{id} — delete a move."""
     move_id = (event.get("pathParameters") or {}).get("id")
     logger.info("delete_move called: move_id=%s", move_id)
+
+    user_groups = _get_user_groups(event)
+    if not user_groups.intersection(EDIT_DELETE_GROUPS):
+        logger.warning("delete_move: forbidden — user groups=%s", user_groups)
+        return _log_response(_forbidden())
+
     if not move_id:
         logger.warning("delete_move: missing moveId path parameter")
         return _log_response(_bad_request("moveId path parameter is required"))

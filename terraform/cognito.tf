@@ -102,3 +102,26 @@ resource "aws_cognito_user_pool_domain" "acro_hub" {
   domain       = "${var.app_name}-${var.environment}"
   user_pool_id = aws_cognito_user_pool.acro_hub.id
 }
+
+# ── Cognito User Groups ───────────────────────────────────────────────────────
+
+resource "aws_cognito_user_group" "contributors" {
+  name         = "contributors"
+  user_pool_id = aws_cognito_user_pool.acro_hub.id
+  description  = "Can upload moves"
+  precedence   = 30
+}
+
+resource "aws_cognito_user_group" "curators" {
+  name         = "curators"
+  user_pool_id = aws_cognito_user_pool.acro_hub.id
+  description  = "Can upload, edit and delete moves"
+  precedence   = 20
+}
+
+resource "aws_cognito_user_group" "admins" {
+  name         = "admins"
+  user_pool_id = aws_cognito_user_pool.acro_hub.id
+  description  = "Can upload, edit and delete moves; additional admin functions in future"
+  precedence   = 10
+}
