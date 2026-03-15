@@ -629,6 +629,25 @@ resource "aws_api_gateway_integration" "moves_id_put" {
   uri                     = "arn:aws:apigateway:${var.aws_region}:lambda:path/2015-03-31/functions/${aws_lambda_function.moves.arn}/invocations"
 }
 
+# PATCH /moves/{id}
+
+resource "aws_api_gateway_method" "moves_id_patch" {
+  rest_api_id   = aws_api_gateway_rest_api.acro_hub.id
+  resource_id   = aws_api_gateway_resource.moves_id.id
+  http_method   = "PATCH"
+  authorization = "COGNITO_USER_POOLS"
+  authorizer_id = aws_api_gateway_authorizer.cognito.id
+}
+
+resource "aws_api_gateway_integration" "moves_id_patch" {
+  rest_api_id             = aws_api_gateway_rest_api.acro_hub.id
+  resource_id             = aws_api_gateway_resource.moves_id.id
+  http_method             = aws_api_gateway_method.moves_id_patch.http_method
+  integration_http_method = "POST"
+  type                    = "AWS_PROXY"
+  uri                     = "arn:aws:apigateway:${var.aws_region}:lambda:path/2015-03-31/functions/${aws_lambda_function.moves.arn}/invocations"
+}
+
 # DELETE /moves/{id}
 
 resource "aws_api_gateway_method" "moves_id_delete" {
@@ -692,7 +711,7 @@ resource "aws_api_gateway_integration_response" "moves_id_options" {
 
   response_parameters = {
     "method.response.header.Access-Control-Allow-Headers" = "'Content-Type,Authorization'"
-    "method.response.header.Access-Control-Allow-Methods" = "'OPTIONS,GET,PUT,DELETE'"
+    "method.response.header.Access-Control-Allow-Methods" = "'OPTIONS,GET,PUT,PATCH,DELETE'"
     "method.response.header.Access-Control-Allow-Origin"  = "'*'"
   }
 }
@@ -969,7 +988,7 @@ resource "aws_api_gateway_gateway_response" "unauthorized" {
   response_parameters = {
     "gatewayresponse.header.Access-Control-Allow-Origin"  = "'*'"
     "gatewayresponse.header.Access-Control-Allow-Headers" = "'Content-Type,Authorization'"
-    "gatewayresponse.header.Access-Control-Allow-Methods" = "'OPTIONS,GET,POST,PUT,DELETE'"
+    "gatewayresponse.header.Access-Control-Allow-Methods" = "'OPTIONS,GET,POST,PUT,PATCH,DELETE'"
   }
 
   response_templates = {
@@ -985,7 +1004,7 @@ resource "aws_api_gateway_gateway_response" "access_denied" {
   response_parameters = {
     "gatewayresponse.header.Access-Control-Allow-Origin"  = "'*'"
     "gatewayresponse.header.Access-Control-Allow-Headers" = "'Content-Type,Authorization'"
-    "gatewayresponse.header.Access-Control-Allow-Methods" = "'OPTIONS,GET,POST,PUT,DELETE'"
+    "gatewayresponse.header.Access-Control-Allow-Methods" = "'OPTIONS,GET,POST,PUT,PATCH,DELETE'"
   }
 
   response_templates = {
@@ -1011,6 +1030,7 @@ resource "aws_api_gateway_deployment" "acro_hub" {
       aws_api_gateway_method.moves_post,
       aws_api_gateway_method.moves_id_get,
       aws_api_gateway_method.moves_id_put,
+      aws_api_gateway_method.moves_id_patch,
       aws_api_gateway_method.moves_id_delete,
       aws_api_gateway_method.videos_url_get,
       aws_api_gateway_method.videos_upload_post,
