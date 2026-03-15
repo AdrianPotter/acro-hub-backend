@@ -1,0 +1,1848 @@
+{
+  "AFrame": {
+    "datesTaught": [
+      "2022-11-09",
+      "2022-02-20",
+      "2020-03-04",
+      "2019-04-10"
+    ],
+    "difficulty": 3,
+    "name": "A-Frame",
+    "videos": {
+      "demo": "VID-20200331-WA0003.mp4"
+    }
+  },
+  "AFrameIntoShalom": {
+    "datesTaught": [
+      "2023-05-17"
+    ],
+    "difficulty": 4,
+    "name": "A-Frame into shalom",
+    "videos": {}
+  },
+  "AFrameIntoWeddingSeat": {
+    "datesTaught": [
+      "2019-04-10"
+    ],
+    "difficulty": 4,
+    "name": "A-Frame into wedding seat",
+    "videos": {}
+  },
+  "Amazon": {
+    "difficulty": 7,
+    "name": "Amazon",
+    "videos": {}
+  },
+  "Arabesque": {
+    "datesTaught": [
+      "2023-05-03",
+      "2019-11-27"
+    ],
+    "difficulty": 6,
+    "name": "Arabesque",
+    "videos": {}
+  },
+  "ArmpitStraddle": {
+    "datesTaught": [
+      "2023-05-17",
+      "2022-08-03",
+      "2019-09-18"
+    ],
+    "difficulty": 1,
+    "name": "Armpit straddle",
+    "videos": {
+      "demo": "VID-20190920-WA0000.mp4"
+    }
+  },
+  "ArmpitStraddleToSittingOnShoulder": {
+    "datesTaught": [
+      "2022-08-03"
+    ],
+    "difficulty": 4,
+    "name": "Armpit straddle to sitting on shoulder",
+    "videos": {}
+  },
+  "AssistedBackwardsWalkover": {
+    "datesTaught": [
+      "2022-02-13",
+      "2020-01-22",
+      "2019-03-13"
+    ],
+    "difficulty": 4,
+    "name": "Assisted backwards walkover",
+    "videos": {
+      "demo": "VID-20200130-WA0002.mp4"
+    }
+  },
+  "AssistedCartwheel": {
+    "datesTaught": [
+      "2023-01-25",
+      "2022-01-30",
+      "2019-05-01"
+    ],
+    "difficulty": 2,
+    "name": "Assisted cartwheel",
+    "videos": {
+      "demo": "VID_20220130_171824.mp4"
+    }
+  },
+  "BackAngel": {
+    "datesTaught": [
+      "2023-02-08",
+      "2022-04-24",
+      "2019-10-09",
+      "2019-02-27"
+    ],
+    "difficulty": 6,
+    "name": "Back angel",
+    "videos": {
+      "demo": "VID-20191011-WA0000.mp4"
+    }
+  },
+  "BackAngelFlipOut": {
+    "datesTaught": [
+      "2023-02-08"
+    ],
+    "difficulty": 8,
+    "name": "Back angel flip out",
+    "videos": {}
+  },
+  "BackDrape": {
+    "datesTaught": [
+      "2023-02-08",
+      "2019-10-09",
+      "2019-02-27"
+    ],
+    "difficulty": 3,
+    "name": "Back drape",
+    "videos": {
+      "demo": "VID-20191011-WA0002.mp4"
+    }
+  },
+  "BackDrapeIntoSalmon": {
+    "datesTaught": [
+      "2023-01-11",
+      "2022-10-12",
+      "2019-10-09"
+    ],
+    "difficulty": 3,
+    "name": "Back drape into salmon",
+    "videos": {
+      "demo": "VID-20191011-WA0001.mp4"
+    }
+  },
+  "BackDrapeSpinAround": {
+    "datesTaught": [
+      "2022-04-24"
+    ],
+    "difficulty": 4,
+    "name": "Back drape spin around",
+    "videos": {
+      "demo": "VID_20220424_172119.mp4"
+    }
+  },
+  "BackDrapeToFrontDip": {
+    "datesTaught": [
+      "2023-02-08",
+      "2019-02-27"
+    ],
+    "difficulty": 4,
+    "name": "Back drape to front dip",
+    "videos": {}
+  },
+  "BackLayout": {
+    "datesTaught": [
+      "2022-08-24",
+      "2019-11-20"
+    ],
+    "difficulty": 3,
+    "name": "Back layout",
+    "videos": {
+      "demo": "VID-20191124-WA0005.mp4"
+    }
+  },
+  "BackLayoutOnHips": {
+    "datesTaught": [
+      "2022-09-28"
+    ],
+    "difficulty": 1,
+    "name": "Back layout on hips",
+    "videos": {}
+  },
+  "Bali": {
+    "datesTaught": [
+      "2022-05-01"
+    ],
+    "difficulty": 6,
+    "name": "Bali",
+    "videos": {}
+  },
+  "BaseFlip": {
+    "datesTaught": [
+      "2019-10-05",
+      "2019-09-04"
+    ],
+    "difficulty": 4,
+    "name": "Base flip",
+    "videos": {
+      "demo": "VID-20190906-WA0004.mp4"
+    }
+  },
+  "Backpack": {
+    "datesTaught": [
+      "2025-08-06"
+    ],
+    "difficulty": 2,
+    "name": "Backpack",
+    "videos": {
+      "demo": "Backpack - Beginner.mp4"
+    }
+  },
+  "Berliner": {
+    "datesTaught": [
+      "2022-06-08",
+      "2019-10-23",
+      "2019-05-29"
+    ],
+    "difficulty": 7,
+    "name": "Berliner",
+    "videos": {
+      "demo": "VID-20191102-WA0006.mp4"
+    }
+  },
+  "Camel": {
+    "datesTaught": [
+      "2023-02-01",
+      "2022-02-06"
+    ],
+    "difficulty": 3,
+    "name": "Camel",
+    "videos": {
+      "demo": "VID_20220206_170757.mp4"
+    }
+  },
+  "CamelFromStraddle": {
+    "datesTaught": [
+      "2023-02-01",
+      "2022-02-06"
+    ],
+    "difficulty": 5,
+    "name": "Camel from straddle",
+    "videos": {
+      "demo": "VID_20220206_172918.mp4"
+    }
+  },
+  "CanOpener": {
+    "datesTaught": [
+      "2022-02-20",
+      "2020-02-05",
+      "2019-07-10",
+      "2019-03-27"
+    ],
+    "difficulty": 3,
+    "name": "Can opener",
+    "videos": {
+      "demo": "VID-20190402-WA0008.mp4"
+    }
+  },
+  "Carousel": {
+    "datesTaught": [
+      "2022-01-09"
+    ],
+    "description": "Similar entrance to the floor spin. The base takes both hands and spins around while the flyer faces out",
+    "name": "Carousel"
+  },
+  "Cartwheel": {
+    "datesTaught": [
+      "2023-01-18",
+      "2022-08-07",
+      "2019-08-14",
+      "2019-05-01"
+    ],
+    "difficulty": 2,
+    "name": "Cartwheel",
+    "videos": {}
+  },
+  "CartwheelIntoFish": {
+    "datesTaught": [
+      "2023-01-18"
+    ],
+    "difficulty": 4,
+    "name": "Cartwheel into fish",
+    "videos": {}
+  },
+  "Cascade": {
+    "datesTaught": [
+      "2023-01-04",
+      "2022-06-01",
+      "2019-08-07"
+    ],
+    "difficulty": 4,
+    "name": "Cascade",
+    "videos": {
+      "demo": "VID-20190808-WA0005.mp4"
+    }
+  },
+  "Cathedral": {
+    "datesTaught": [
+      "2023-05-10"
+    ],
+    "difficulty": 5,
+    "name": "Cathedral",
+    "videos": {}
+  },
+  "CropDuster": {
+    "datesTaught": [
+      "2022-06-15",
+      "2019-12-04"
+    ],
+    "difficulty": 5,
+    "name": "Crop duster",
+    "videos": {
+      "demo": "VID-20191210-WA0003.mp4",
+      "slow": "VID-20191210-WA0006.mp4"
+    }
+  },
+  "CrossBodyItalian": {
+    "datesTaught": [
+      "2023-03-08",
+      "2020-08-31",
+      "2020-02-26",
+      "2019-08-21",
+      "2019-04-17"
+    ],
+    "difficulty": 2,
+    "name": "Cross-body Italian",
+    "videos": {
+      "demo": "VID-20190822-WA0003.mp4"
+    }
+  },
+  "CrucifixFlip": {
+    "datesTaught": [
+      "2022-02-13",
+      "2019-11-06",
+      "2019-05-15"
+    ],
+    "difficulty": 3,
+    "name": "Crucifix flip",
+    "videos": {
+      "demo": "VID-20191124-WA0006.mp4"
+    }
+  },
+  "CurlyWurly": {
+    "datesTaught": [
+      "2025-08-13"
+    ],
+    "difficulty": 4,
+    "name": "Curly Wurly",
+    "videos": {
+      "demo": "Curly Wurly - Intermediate.mp4"
+    }
+  },
+  "DeathDiveFromTheFront": {
+    "datesTaught": [
+      "2019-05-22"
+    ],
+    "difficulty": 5,
+    "name": "Death dive from the front",
+    "videos": {}
+  },
+  "DeathDiveFromTheFrontIntoStraddle": {
+    "datesTaught": [
+      "2019-05-22"
+    ],
+    "difficulty": 6,
+    "name": "Death dive from the front into straddle",
+    "videos": {}
+  },
+  "DeathDiveFromTheSide": {
+    "datesTaught": [
+      "2022-06-15",
+      "2019-05-22"
+    ],
+    "difficulty": 4,
+    "name": "Death dive from the side",
+    "videos": {}
+  },
+  "DeathDiveFromTheSideIntoStraddle": {
+    "datesTaught": [
+      "2022-06-15"
+    ],
+    "difficulty": 4,
+    "name": "Death dive from the side into straddle",
+    "videos": {}
+  },
+  "DeathSwing": {
+    "datesTaught": [
+      "2022-07-27",
+      "2020-02-26",
+      "2019-08-21"
+    ],
+    "difficulty": 5,
+    "name": "Death swing",
+    "videos": {
+      "demo": "VID-20190822-WA0004.mp4",
+      "slow": "VID-20200331-WA0007.mp4"
+    }
+  },
+  "DemiHula": {
+    "datesTaught": [
+      "2022-06-08",
+      "2022-03-06",
+      "2020-01-08",
+      "2019-10-23",
+      "2019-05-29",
+      "2019-01-23"
+    ],
+    "difficulty": 2,
+    "name": "Demi hula",
+    "videos": {
+      "demo": "VID-20191102-WA0005.mp4"
+    }
+  },
+  "DemiItalian": {
+    "datesTaught": [
+      "2020-01-22"
+    ],
+    "difficulty": 2,
+    "name": "Demi-Italian",
+    "videos": {
+      "demo": "VID-20200130-WA0003.mp4"
+    }
+  },
+  "DirtyDancing": {
+    "datesTaught": [
+      "2022-05-18",
+      "2019-09-18"
+    ],
+    "difficulty": 5,
+    "name": "Dirty dancing",
+    "videos": {
+      "demo": "VID-20190920-WA0002.mp4"
+    }
+  },
+  "DoaFlip": {
+    "datesTaught": [
+      "2023-03-01",
+      "2022-07-20",
+      "2019-10-30",
+      "2019-04-03"
+    ],
+    "difficulty": 3,
+    "name": "DoA flip",
+    "videos": {
+      "demo": "VID-20190410-WA0003.mp4"
+    }
+  },
+  "DoubleBunny": {
+    "datesTaught": [
+      "2019-09-04"
+    ],
+    "difficulty": 3,
+    "name": "Double bunny",
+    "videos": {
+      "demo": "VID-20190906-WA0005.mp4"
+    }
+  },
+  "DoubleCartwheel": {
+    "datesTaught": [
+      "2022-08-07"
+    ],
+    "difficulty": 4,
+    "name": "Double cartwheel",
+    "videos": {}
+  },
+  "Dragon": {
+    "datesTaught": [
+      "2022-08-17",
+      "2019-12-18"
+    ],
+    "difficulty": 5,
+    "name": "Dragon",
+    "videos": {
+      "demo": "VID-20191224-WA0003.mp4"
+    }
+  },
+  "Dulaine": {
+    "difficulty": 8,
+    "name": "Dulaine",
+    "videos": {}
+  },
+  "EggTimer": {
+    "datesTaught": [
+      "2022-05-11",
+      "2019-09-11"
+    ],
+    "difficulty": 4,
+    "name": "Egg timer",
+    "videos": {
+      "demo": "VID-20190915-WA0002.mp4"
+    }
+  },
+  "FallingStar": {
+    "datesTaught": [
+      "2022-11-23",
+      "2019-10-02",
+      "2019-05-01",
+      "2019-01-30"
+    ],
+    "difficulty": 5,
+    "name": "Falling star",
+    "videos": {
+      "demo": "VID-20191008-WA0003.mp4"
+    }
+  },
+  "Fang": {
+    "datesTaught": [
+      "2022-09-21"
+    ],
+    "difficulty": 6,
+    "name": "Fang",
+    "videos": {}
+  },
+  "FanKick": {
+    "datesTaught": [
+      "2023-01-11",
+      "2019-11-13"
+    ],
+    "difficulty": 1,
+    "name": "Fan kick",
+    "videos": {
+      "demo": "VID-20191124-WA0001.mp4"
+    }
+  },
+  "Fish": {
+    "datesTaught": [
+      "2023-05-03",
+      "2022-03-13",
+      "2019-08-29"
+    ],
+    "difficulty": 1,
+    "name": "Fish",
+    "videos": {
+      "demo": "VID-20190906-WA0007.mp4"
+    }
+  },
+  "FishRoll": {
+    "datesTaught": [
+      "2022-03-13",
+      "2019-11-27",
+      "2019-08-29"
+    ],
+    "difficulty": 3,
+    "name": "Fish roll",
+    "videos": {
+      "demo": "VID-20190903-WA0001.mp4"
+    }
+  },
+  "FishWheel": {
+    "datesTaught": [
+      "2022-08-07",
+      "2019-08-14"
+    ],
+    "difficulty": 5,
+    "name": "Fish wheel",
+    "videos": {
+      "demo": "VID-20190815-WA0001.mp4"
+    }
+  },
+  "Flame": {
+    "difficulty": 6,
+    "name": "Flame",
+    "videos": {}
+  },
+  "Flamingo": {
+    "datesTaught": [
+      "2019-10-05",
+      "2019-06-12"
+    ],
+    "difficulty": 8,
+    "name": "Flamingo",
+    "videos": {}
+  },
+  "FlickStraddle": {
+    "datesTaught": [
+      "2023-02-01",
+      "2022-02-06",
+      "2020-03-04",
+      "2019-08-07"
+    ],
+    "difficulty": 3,
+    "name": "Flick straddle",
+    "videos": {
+      "demo": "VID-20190808-WA0006.mp4"
+    }
+  },
+  "FlickStraddleToCascade": {
+    "datesTaught": [
+      "2019-08-07"
+    ],
+    "difficulty": 5,
+    "name": "Flick straddle to cascade",
+    "videos": {
+      "demo": "VID-20190808-WA0004.mp4"
+    }
+  },
+  "FloorSpin": {
+    "datesTaught": [
+      "2022-01-09"
+    ],
+    "difficulty": 1,
+    "name": "Floor spin",
+    "videos": {
+      "demo": "VID_20220109_171506.mp4"
+    }
+  },
+  "FlyingFish": {
+    "datesTaught": [
+      "2019-09-04"
+    ],
+    "difficulty": 5,
+    "name": "Flying fish",
+    "videos": {
+      "demo": "VID-20190906-WA0002.mp4",
+      "slow": "VID-20190906-WA0003.mp4"
+    }
+  },
+  "FlyingFloorSpin": {
+    "datesTaught": [
+      "2022-01-09"
+    ],
+    "difficulty": 1,
+    "name": "Flying floor spin",
+    "videos": {
+      "demo": "VID_20220109_172553.mp4"
+    }
+  },
+  "FlyingLemur": {
+    "datesTaught": [
+      "2023-04-12",
+      "2022-07-06",
+      "2019-07-06",
+      "2019-06-19"
+    ],
+    "difficulty": 5,
+    "name": "Flying Lemur",
+    "videos": {
+      "demo": "VID-20190620-WA0004.mp4"
+    }
+  },
+  "FrontFlip": {
+    "datesTaught": [
+      "2022-05-01",
+      "2019-05-08"
+    ],
+    "difficulty": 5,
+    "name": "Front flip",
+    "videos": {
+      "demo": "VID-20190510-WA0002.mp4"
+    }
+  },
+  "FrontFlipPlus": {
+    "datesTaught": [
+      "2022-05-01",
+      "2019-10-30",
+      "2019-05-08"
+    ],
+    "difficulty": 6,
+    "name": "Front flip, plus",
+    "videos": {
+      "demo": "VID-20190510-WA0001.mp4"
+    }
+  },
+  "FrontSittingOnShoulders": {
+    "datesTaught": [
+      "2025-08-20"
+    ],
+    "difficulty": 5,
+    "name": "Front Sitting on Shoulders",
+    "videos": {
+      "demo": "Front Sitting on Shoulders - Intermediate+.mp4"
+    }
+  },
+  "FrontSomersaultFromShoulders": {
+    "datesTaught": [
+      "2023-04-12",
+      "2022-10-19",
+      "2020-02-19",
+      "2019-02-20"
+    ],
+    "difficulty": 7,
+    "name": "Front somersault from shoulders",
+    "videos": {}
+  },
+  "FrontSomersaultFromStanding": {
+    "datesTaught": [
+      "2023-03-15",
+      "2022-10-19",
+      "2022-01-09",
+      "2020-02-19",
+      "2019-02-20"
+    ],
+    "difficulty": 6,
+    "name": "Front somersault from standing",
+    "videos": {}
+  },
+  "FussballFlip": {
+    "datesTaught": [
+      "2023-03-22",
+      "2022-08-24"
+    ],
+    "difficulty": 3,
+    "name": "Fussball flip",
+    "videos": {}
+  },
+  "GandT": {
+    "datesTaught": [
+      "2022-10-12",
+      "2020-02-12"
+    ],
+    "difficulty": 6,
+    "name": "G and T",
+    "videos": {
+      "demo": "VID-20200213-WA0005.mp4"
+    }
+  },
+  "Glider": {
+    "datesTaught": [
+      "2022-08-14",
+      "2022-06-15",
+      "2020-01-08",
+      "2019-05-15"
+    ],
+    "difficulty": 1,
+    "name": "Glider",
+    "videos": {}
+  },
+  "Glift": {
+    "datesTaught": [
+      "2022-11-23",
+      "2022-10-12",
+      "2020-02-12",
+      "2019-10-02",
+      "2019-06-19",
+      "2019-01-30"
+    ],
+    "difficulty": 3,
+    "name": "Glift",
+    "videos": {
+      "demo": "VID-20190131-WA0000.mp4"
+    }
+  },
+  "GliftToWeddingSeat": {
+    "datesTaught": [
+      "2020-02-12",
+      "2019-06-19"
+    ],
+    "difficulty": 4,
+    "name": "Glift to wedding seat",
+    "videos": {
+      "demo": "VID-20190620-WA0002.mp4"
+    }
+  },
+  "HalfHula": {
+    "datesTaught": [
+      "2022-06-08",
+      "2022-03-06",
+      "2019-10-23",
+      "2019-05-29",
+      "2019-01-23"
+    ],
+    "difficulty": 3,
+    "name": "Half hula",
+    "videos": {
+      "demo": "VID-20191102-WA0003.mp4"
+    }
+  },
+  "HeadJump": {
+    "datesTaught": [
+      "2022-08-17",
+      "2020-01-29",
+      "2019-08-29",
+      "2019-04-03"
+    ],
+    "difficulty": 4,
+    "name": "Head jump",
+    "videos": {
+      "demo": "VID-20190410-WA0002.mp4",
+      "slow": "VID-20190904-WA0002.mp4"
+    }
+  },
+  "HeadThrow": {
+    "datesTaught": [
+      "2022-09-28",
+      "2022-08-24"
+    ],
+    "difficulty": 5,
+    "name": "Head throw",
+    "videos": {}
+  },
+  "HighStar": {
+    "datesTaught": [
+      "2019-05-15"
+    ],
+    "difficulty": 6,
+    "name": "High star",
+    "videos": {}
+  },
+  "Hula": {
+    "datesTaught": [
+      "2022-03-06",
+      "2019-01-23"
+    ],
+    "difficulty": 5,
+    "name": "Hula",
+    "videos": {}
+  },
+  "HumanPyramid": {
+    "datesTaught": [
+      "2023-05-10"
+    ],
+    "difficulty": 3,
+    "name": "Human pyramid",
+    "videos": {}
+  },
+  "IncyWincy": {
+    "datesTaught": [
+      "2023-04-26"
+    ],
+    "difficulty": 2,
+    "name": "Incy Wincy",
+    "videos": {}
+  },
+  "Italian": {
+    "datesTaught": [
+      "2023-03-08",
+      "2022-02-20",
+      "2019-12-04",
+      "2019-07-03"
+    ],
+    "difficulty": 2,
+    "name": "Italian",
+    "videos": {
+      "demo": "VID-20190704-WA0001.mp4"
+    }
+  },
+  "JackInTheBox": {
+    "datesTaught": [
+      "2023-01-04",
+      "2019-09-25"
+    ],
+    "difficulty": 4,
+    "name": "Jack in the box",
+    "otherNames": [
+      "Pussy biter"
+    ],
+    "videos": {
+      "demo": "VID-20190929-WA0003.mp4",
+      "slow": "VID-20190929-WA0002.mp4"
+    }
+  },
+  "JumpToFish": {
+    "datesTaught": [
+      "2023-05-03"
+    ],
+    "difficulty": 3,
+    "name": "Jump to fish",
+    "videos": {}
+  },
+  "JumpToSittingOnShoulders": {
+    "datesTaught": [
+      "2023-03-15",
+      "2022-07-13",
+      "2022-05-25",
+      "2019-12-11",
+      "2019-07-31"
+    ],
+    "difficulty": 3,
+    "name": "Jump to sitting on shoulders",
+    "videos": {
+      "demo": "VID-20190805-WA0003.mp4"
+    }
+  },
+  "JumpToStandingOnShoulders": {
+    "datesTaught": [
+      "2022-08-17"
+    ],
+    "difficulty": 7,
+    "name": "Jump to standing on shoulders",
+    "videos": {}
+  },
+  "KickOutJump": {
+    "datesTaught": [
+      "2022-10-19",
+      "2022-01-09",
+      "2020-02-19",
+      "2019-02-20"
+    ],
+    "difficulty": 2,
+    "name": "Kick out jump",
+    "videos": {}
+  },
+  "KneeSitSwingAround": {
+    "datesTaught": [
+      "2022-02-20",
+      "2019-11-06",
+      "2019-10-11"
+    ],
+    "difficulty": 1,
+    "name": "Knee Sit Swing Around",
+    "videos": {
+      "demo": "VID_20201011_183632.mp4"
+    }
+  },
+  "Landshut": {
+    "datesTaught": [
+      "2022-05-11",
+      "2019-09-11",
+      "2019-03-13"
+    ],
+    "difficulty": 5,
+    "name": "Landshut",
+    "videos": {
+      "demo": "VID-20190919-WA0003.mp4"
+    }
+  },
+  "Launch": {
+    "datesTaught": [
+      "2023-05-03",
+      "2022-03-13",
+      "2019-11-20",
+      "2019-07-10"
+    ],
+    "difficulty": 5,
+    "name": "Launch",
+    "videos": {
+      "demo": "VID-20190711-WA0000.mp4"
+    }
+  },
+  "LegFlick": {
+    "datesTaught": [
+      "2020-10-04"
+    ],
+    "difficulty": 1,
+    "name": "Leg Flick",
+    "videos": {
+      "demo": "VID_20201004_183312.mp4"
+    }
+  },
+    "Lighthouse": {
+    "datesTaught": [
+      "2025-08-27"
+    ],
+    "difficulty": 2,
+    "name": "Lighthouse",
+    "videos": {
+      "demo": "Lighthouse - Beginner.mp4"
+    }
+  },
+  "Lillipad": {
+    "datesTaught": [
+      "2025-06-04"
+    ],
+    "difficulty": 7,
+    "name": "Lillipad",
+    "videos": {
+      "demo": "Lillipad.mp4"
+    }
+  },
+  "MoonFlip": {
+    "datesTaught": [
+      "2023-03-08",
+      "2022-08-31"
+    ],
+    "difficulty": 2,
+    "name": "Moon flip",
+    "videos": {}
+  },
+  "Munich": {
+    "datesTaught": [
+      "2022-07-20",
+      "2019-11-20",
+      "2019-06-12"
+    ],
+    "difficulty": 4,
+    "name": "Munich",
+    "videos": {
+      "demo": "VID-20191124-WA0003.mp4"
+    }
+  },
+  "Ninja": {
+    "difficulty": 10,
+    "name": "Ninja",
+    "videos": {}
+  },
+  "NinjaNoFlip": {
+    "difficulty": 8,
+    "name": "Ninja no flip",
+    "videos": {}
+  },
+  "Pancake": {
+    "datesTaught": [
+      "2022-10-05"
+    ],
+    "difficulty": 3,
+    "name": "Pancake",
+    "videos": {}
+  },
+  "PeddleFlip": {
+    "datesTaught": [
+      "2019-12-18"
+    ],
+    "difficulty": 4,
+    "name": "Peddle flip",
+    "videos": {
+      "demo": "VID-20191224-WA0000.mp4"
+    }
+  },
+  "Ping": {
+    "datesTaught": [
+      "2022-08-10",
+      "2019-07-31"
+    ],
+    "difficulty": 6,
+    "name": "Ping",
+    "videos": {
+      "demo": "VID-20190805-WA0000.mp4"
+    }
+  },
+  "Pinwheel": {
+    "datesTaught": [
+      "2025-09-03"
+    ],
+    "difficulty": 2,
+    "name": "Pinwheel",
+    "videos": {
+      "demo": "Pinwheel - Beginner.mp4"
+    }
+  },
+  "Plates": {
+    "datesTaught": [
+      "2022-08-14",
+      "2022-06-29",
+      "2020-03-11",
+      "2019-11-13",
+      "2019-07-17"
+    ],
+    "difficulty": 3,
+    "name": "Plates",
+    "videos": {
+      "demo": "VID-20190718-WA0001.mp4"
+    }
+  },
+  "Pull": {
+    "datesTaught": [
+      "2023-01-11",
+      "2022-05-11",
+      "2020-01-22",
+      "2019-09-11",
+      "2019-03-13"
+    ],
+    "difficulty": 6,
+    "name": "Pull",
+    "videos": {
+      "demo": "VID-20190919-WA0002.mp4"
+    }
+  },
+  "Pull to straddle": {
+    "difficulty": 7,
+    "name": "Pull to straddle",
+    "videos": {}
+  },
+  "QuadJumpToShoulderWithRollDown": {
+    "datesTaught": [
+      "2025-06-18"
+    ],
+    "difficulty": 4,
+    "name": "Quad Jump to Sit on Shoulder with Roll-Down",
+    "videos": {
+      "demo": "QuadJumpToSitOnShoulderWithRollDown.mp4"
+    }
+  },
+  "ReverseItalian": {
+    "datesTaught": [
+      "2022-06-15",
+      "2019-04-17"
+    ],
+    "difficulty": 5,
+    "name": "Reverse Italian",
+    "videos": {}
+  },
+  "RocknRolla": {
+    "datesTaught": [
+      "2025-09-10"
+    ],
+    "difficulty": 6,
+    "name": "Rock'n Rolla",
+    "videos": {
+      "demo": "Rock'n Rolla - Advanced.mp4"
+    }
+  },
+  "RollDown": {
+    "datesTaught": [
+      "2022-06-01",
+      "2019-06-27"
+    ],
+    "difficulty": 3,
+    "name": "Roll down",
+    "videos": {
+      "demo": "VID-20190627-WA0001.mp4"
+    }
+  },
+  "RollUp": {
+    "datesTaught": [
+      "2022-11-30",
+      "2022-03-20",
+      "2020-02-05",
+      "2019-07-24"
+    ],
+    "difficulty": 4,
+    "name": "Roll up",
+    "videos": {
+      "demo": "VID-20190728-WA0004.mp4"
+    }
+  },
+  "RollUpItalian": {
+    "datesTaught": [
+      "2022-11-30",
+      "2022-03-20",
+      "2019-07-24"
+    ],
+    "difficulty": 2,
+    "name": "Roll up Italian",
+    "videos": {
+      "demo": "VID-20190728-WA0002.mp4"
+    }
+  },
+  "RotisaryChicken": {
+    "datesTaught": [
+      "2025-09-17"
+    ],
+    "difficulty": 4,
+    "name": "Rotisary Chicken",
+    "videos": {
+      "demo": "Rotisary Chicken - Intermediate.mp4"
+    }
+  },
+  "SausageRoll": {
+    "datesTaught": [
+      "2019-08-29"
+    ],
+    "difficulty": 4,
+    "name": "Sausage roll",
+    "videos": {
+      "demo": "VID-20190904-WA0001.mp4"
+    }
+  },
+  "Scarf": {
+    "datesTaught": [
+      "2025-06-18"
+    ],
+    "difficulty": 4,
+    "name": "Scarf",
+    "videos": {
+      "demo": "Scarf.mp4"
+    }
+  },
+  "ScarfToShoulderSit": {
+    "datesTaught": [
+      "2025-09-24"
+    ],
+    "difficulty": 4,
+    "name": "Scarf To Shoulder Sit",
+    "videos": {
+      "demo": "Scarf To Shoulder Sit - Intermediate.mp4"
+    }
+  },
+  "Scorpion": {
+    "difficulty": 8,
+    "name": "Scorpion",
+    "videos": {}
+  },
+  "Shalom": {
+    "datesTaught": [
+      "2022-11-16",
+      "2022-05-25",
+      "2022-02-27",
+      "2020-01-08",
+      "2019-07-31",
+      "2019-07-17",
+      "2019-02-06"
+    ],
+    "difficulty": 1,
+    "name": "Shalom",
+    "videos": {
+      "demo": "VID-20190208-WA0002.mp4"
+    }
+  },
+  "ShalomToSuperPlates": {
+    "datesTaught": [
+      "2020-03-11"
+    ],
+    "difficulty": 5,
+    "name": "Shalom to super plates",
+    "videos": {}
+  },
+  "ShoulderBall": {
+    "datesTaught": [
+      "2023-03-08",
+      "2022-08-31",
+      "2020-02-26",
+      "2019-08-21",
+      "2019-04-17"
+    ],
+    "difficulty": 8,
+    "name": "Shoulder ball",
+    "videos": {
+      "demo": "ShoulderBall.mp4",
+      "slow": "VID-20190822-WA0006.mp4"
+    }
+  },
+  "ShoulderSit": {
+    "datesTaught": [
+      "2019-12-11",
+      "2019-06-19",
+      "2019-02-13"
+    ],
+    "difficulty": 2,
+    "name": "Shoulder sit",
+    "videos": {
+      "demo": "VID-20190620-WA0003.mp4"
+    }
+  },
+  "ShoulderWheel": {
+    "datesTaught": [
+      "2025-10-01"
+    ],
+    "difficulty": 4,
+    "name": "Shoulder Wheel",
+    "videos": {
+      "demo": "Shoulder Wheel - Intermediate.mp4"
+    }
+  },
+  "SimpleStraddle": {
+    "datesTaught": [
+      "2022-02-06",
+      "2020-01-08"
+    ],
+    "difficulty": 1,
+    "name": "Simple straddle",
+    "videos": {}
+  },
+  "SkullCracker": {
+    "datesTaught": [
+      "2022-11-16",
+      "2022-02-27",
+      "2019-07-17"
+    ],
+    "difficulty": 5,
+    "name": "Skull cracker",
+    "videos": {
+      "demo": "VID-20190719-WA0001.mp4"
+    }
+  },
+  "Slinky": {
+    "datesTaught": [
+      "2023-05-17",
+      "2022-11-02",
+      "2020-01-22",
+      "2019-06-27"
+    ],
+    "difficulty": 5,
+    "name": "Slinky",
+    "videos": {
+      "demo": "VID-20200130-WA0004.mp4",
+      "slow": "VID-20200124-WA0003.mp4"
+    }
+  },
+  "Snowman": {
+    "datesTaught": [
+      "2019-12-18"
+    ],
+    "difficulty": 3,
+    "name": "Snowman",
+    "videos": {
+      "demo": "VID-20191224-WA0002.mp4"
+    }
+  },
+  "SpiderJump": {
+    "datesTaught": [
+      "2023-04-26",
+      "2022-01-16"
+    ],
+    "description": "Like a yeah drop but flyer doesn't hook and comes straight down into a Spiderman style landing",
+    "difficulty": 1,
+    "name": "Spider jump",
+    "videos": {
+      "demo": "VID_20220116_171817.mp4"
+    }
+  },
+  "SpiderSwing": {
+    "datesTaught": [
+      "2023-04-26",
+      "2022-07-27",
+      "2019-07-10"
+    ],
+    "difficulty": 4,
+    "name": "Spider swing",
+    "videos": {
+      "demo": "VID-20190711-WA0002.mp4"
+    }
+  },
+  "SpinCycle": {
+    "datesTaught": [
+      "2022-11-16"
+    ],
+    "difficulty": 6,
+    "name": "Spin cycle",
+    "videos": {}
+  },
+  "SpinInToFish": {
+    "datesTaught": [
+      "2019-11-27"
+    ],
+    "difficulty": 2,
+    "name": "Spin into fish",
+    "videos": {
+      "demo": "VID-20191210-WA0002.mp4"
+    }
+  },
+  "SpinningAFrame": {
+    "datesTaught": [
+      "2022-11-09"
+    ],
+    "difficulty": 5,
+    "name": "Spinning A-Frame",
+    "videos": {}
+  },
+  "SpinningBunny": {
+    "datesTaught": [
+      "2020-10-25"
+    ],
+    "difficulty": 1,
+    "name": "Spinning Bunny",
+    "videos": {
+      "demo": "VID_20201025_190209.mp4"
+    }
+  },
+  "Stag": {
+    "datesTaught": [
+      "2020-10-04"
+    ],
+    "difficulty": 1,
+    "name": "Stag",
+    "videos": {
+      "demo": "VID_20201004_183325.mp4"
+    }
+  },
+  "StandingOnShoulders": {
+    "datesTaught": [
+      "2022-08-10",
+      "2022-07-13",
+      "2019-12-11",
+      "2019-02-13"
+    ],
+    "difficulty": 6,
+    "name": "Standing on shoulders",
+    "videos": {}
+  },
+  "StandingOnShouldersToShoulderSit": {
+    "datesTaught": [
+      "2022-10-26",
+      "2022-08-10"
+    ],
+    "difficulty": 7,
+    "name": "Standing on shoulders to shoulder sit",
+    "videos": {}
+  },
+  "Star": {
+    "difficulty": 7,
+    "name": "Star",
+    "videos": {}
+  },
+  "Starburst": {
+    "datesTaught": [
+      "2023-04-12",
+      "2022-07-06",
+      "2019-09-25"
+    ],
+    "difficulty": 3,
+    "name": "Starburst",
+    "videos": {
+      "demo": "VID-20190929-WA0004.mp4"
+    }
+  },
+  "StraddleToShalom": {
+    "datesTaught": [
+      "2022-06-29",
+      "2022-02-27",
+      "2020-01-08",
+      "2019-10-17",
+      "2019-03-20"
+    ],
+    "difficulty": 4,
+    "name": "Straddle to shalom",
+    "videos": {
+      "demo": "VID-20191020-WA0002.mp4"
+    }
+  },
+  "StraddleToShoulders": {
+    "datesTaught": [
+      "2022-11-02",
+      "2019-08-07"
+    ],
+    "difficulty": 5,
+    "name": "Straddle to shoulders",
+    "videos": {
+      "demo": "VID-20190808-WA0007.mp4"
+    }
+  },
+  "StraddleToWeddingSeat": {
+    "datesTaught": [
+      "2019-09-18",
+      "2019-03-20"
+    ],
+    "difficulty": 4,
+    "name": "Straddle to wedding seat",
+    "videos": {
+      "demo": "VID-20190920-WA0001.mp4"
+    }
+  },
+  "StraightLift": {
+    "datesTaught": [
+      "2022-08-17",
+      "2020-01-29"
+    ],
+    "difficulty": 2,
+    "name": "Straight lift",
+    "videos": {
+      "demo": "VID-20200210-WA0009.mp4"
+    }
+  },
+  "StraightUnderArmLift": {
+    "datesTaught": [
+      "2020-01-15"
+    ],
+    "difficulty": 2,
+    "name": "Straight under arm lift",
+    "videos": {
+      "demo": "VID-20200130-WA0006.mp4"
+    }
+  },
+  "SuperBunny": {
+    "datesTaught": [
+      "2019-07-06",
+      "2019-04-03"
+    ],
+    "difficulty": 2,
+    "name": "Super bunny",
+    "videos": {
+      "demo": "VID-20190410-WA0004.mp4"
+    }
+  },
+  "SuperFallingStar": {
+    "datesTaught": [
+      "2019-10-02"
+    ],
+    "difficulty": 6,
+    "name": "Super falling star",
+    "videos": {
+      "demo": "VID-20191008-WA0004.mp4"
+    }
+  },
+  "Supernova": {
+    "datesTaught": [
+      "2023-04-12",
+      "2019-01-30"
+    ],
+    "difficulty": 6,
+    "name": "Supernova",
+    "videos": {
+      "demo": "VID-20190131-WA0001.mp4"
+    }
+  },
+  "SuperPlates": {
+    "datesTaught": [
+      "2022-08-14",
+      "2020-03-11",
+      "2019-11-13",
+      "2019-07-17"
+    ],
+    "difficulty": 5,
+    "name": "Super plates",
+    "videos": {
+      "demo": "VID-20190719-WA0002.mp4",
+      "slow": "VID-20190718-WA0000.mp4"
+    }
+  },
+  "SuperSpud": {
+    "datesTaught": [
+      "2019-06-05"
+    ],
+    "difficulty": 4,
+    "name": "Super spud",
+    "videos": {}
+  },
+  "Surfboard": {
+    "difficulty": 10,
+    "name": "Surfboard",
+    "videos": {}
+  },
+  "Swan": {
+    "datesTaught": [
+      "2022-06-29",
+      "2019-09-25"
+    ],
+    "difficulty": 4,
+    "name": "Swan",
+    "videos": {
+      "demo": "VID-20190929-WA0001.mp4"
+    }
+  },
+  "SwanToShalom": {
+    "datesTaught": [
+      "2022-06-29",
+      "2019-10-17",
+      "2019-03-20"
+    ],
+    "difficulty": 6,
+    "name": "Swan to shalom",
+    "videos": {
+      "demo": "VID-20191020-WA0001.mp4"
+    }
+  },
+  "Swingaround": {
+    "datesTaught": [
+      "2022-07-27",
+      "2019-07-10"
+    ],
+    "difficulty": 3,
+    "name": "Swingaround",
+    "videos": {
+      "demo": "VID-20190711-WA0003.mp4"
+    }
+  },
+  "Tchaikovsky": {
+    "datesTaught": [
+      "2019-11-06",
+      "2019-05-08"
+    ],
+    "difficulty": 7,
+    "name": "Tchaikovsky",
+    "videos": {
+      "demo": "VID-20190510-WA0000.mp4"
+    }
+  },
+  "TeddyDrop": {
+    "datesTaught": [
+      "2023-03-08",
+      "2022-05-04",
+      "2019-07-03"
+    ],
+    "difficulty": 5,
+    "name": "Teddy drop",
+    "videos": {
+      "demo": "VID-20190704-WA0003.mp4"
+    }
+  },
+  "TeddyDropWithPost": {
+    "datesTaught": [
+      "2023-03-08",
+      "2022-05-04",
+      "2019-07-03"
+    ],
+    "difficulty": 6,
+    "name": "Teddy drop with post",
+    "videos": {
+      "demo": "VID-20190704-WA0004.mp4"
+    }
+  },
+  "TeddyLift": {
+    "datesTaught": [
+      "2023-03-08",
+      "2022-05-04",
+      "2019-12-04",
+      "2019-07-03"
+    ],
+    "difficulty": 4,
+    "name": "Teddy lift",
+    "videos": {
+      "demo": "VID-20190704-WA0002.mp4"
+    }
+  },
+  "TeethKicker": {
+    "datesTaught": [
+      "2023-03-01"
+    ],
+    "difficulty": 4,
+    "name": "Teeth kicker",
+    "videos": {}
+  },
+  "Throne": {
+    "datesTaught": [
+      "2025-10-01"
+    ],
+    "difficulty": 6,
+    "name": "Throne",
+    "videos": {
+      "demo": "Throne - Advanced.mp4"
+    }
+  },
+  "TickTock": {
+    "datesTaught": [
+      "2022-10-26",
+      "2022-07-13"
+    ],
+    "difficulty": 4,
+    "name": "Tick Tock",
+    "videos": {}
+  },
+  "TLift": {
+    "datesTaught": [
+      "2022-11-30",
+      "2019-07-24"
+    ],
+    "difficulty": 4,
+    "name": "T-lift",
+    "videos": {
+      "demo": "VID-20190728-WA0003.mp4"
+    }
+  },
+  "TLiftToFish": {
+    "datesTaught": [
+      "2019-07-24"
+    ],
+    "difficulty": 6,
+    "name": "T-lift to fish",
+    "videos": {
+      "demo": "VID-20190728-WA0000.mp4"
+    }
+  },
+  "Tumblecracker": {
+    "datesTaught": [
+      "2024-10-31"
+    ],
+    "difficulty": 6,
+    "name": "Tumblecracker",
+    "videos": {
+      "demo": "Tumblecracker.mp4"
+    }
+  },
+  "Tunnel": {
+    "datesTaught": [
+      "2019-06-12"
+    ],
+    "difficulty": 4,
+    "name": "Tunnel",
+    "videos": {}
+  },
+  "Twister": {
+    "datesTaught": [
+      "2022-07-20"
+    ],
+    "difficulty": 6,
+    "name": "Twister",
+    "videos": {}
+  },
+  "Ventriloquist": {
+    "datesTaught": [
+      "2023-03-22",
+      "2022-01-16",
+      "2020-01-15"
+    ],
+    "difficulty": 7,
+    "name": "Ventriloquist",
+    "videos": {
+      "demo": "VID-20200116-WA0002.mp4"
+    }
+  },
+  "WagonWheel": {
+    "datesTaught": [
+      "2023-01-25",
+      "2022-01-30",
+      "2019-08-14"
+    ],
+    "difficulty": 6,
+    "name": "Wagon wheel",
+    "videos": {
+      "demo": "VID-20190815-WA0002.mp4"
+    }
+  },
+  "WalkingMunich": {
+    "datesTaught": [
+      "2023-03-01",
+      "2022-02-20",
+      "2022-02-13",
+      "2019-10-30"
+    ],
+    "difficulty": 3,
+    "name": "Walking Munich",
+    "videos": {
+      "demo": "VID-20191031-WA0003.mp4"
+    }
+  },
+  "WalkOverFromBackLayoutOnHips": {
+    "datesTaught": [
+      "2022-09-28"
+    ],
+    "difficulty": 3,
+    "name": "Walk over from back layout on hips",
+    "videos": {}
+  },
+  "WeddingSeatFlipOut": {
+    "difficulty": 4,
+    "name": "Wedding seat flip out",
+    "videos": {}
+  },
+  "WeddingSeatToFish": {
+    "datesTaught": [
+      "2019-04-24"
+    ],
+    "difficulty": 2,
+    "name": "Wedding seat to fish",
+    "videos": {}
+  },
+  "WeddingSeatToStraddle": {
+    "datesTaught": [
+      "2020-01-08",
+      "2019-10-17"
+    ],
+    "difficulty": 3,
+    "name": "Wedding seat to straddle",
+    "videos": {
+      "demo": "VID-20191020-WA0003.mp4"
+    }
+  },
+  "WheeSplat": {
+    "datesTaught": [
+      "2022-05-25",
+      "2019-12-11",
+      "2019-02-13"
+    ],
+    "difficulty": 6,
+    "name": "Whee-splat",
+    "videos": {
+      "demo": "VID-20191216-WA0003.mp4",
+      "slow": "VID-20191216-WA0006.mp4"
+    }
+  },
+  "WheeSplatToFish": {
+    "datesTaught": [
+      "2019-07-31"
+    ],
+    "difficulty": 6,
+    "name": "Whee-splat to fish",
+    "videos": {
+      "demo": "VID-20190805-WA0002.mp4"
+    }
+  },
+  "Whip": {
+    "datesTaught": [
+      "2023-03-15",
+      "2022-05-11",
+      "2022-05-04",
+      "2022-01-23",
+      "2020-01-29",
+      "2019-02-06"
+    ],
+    "difficulty": 6,
+    "name": "Whip",
+    "videos": {
+      "demo": "VID_20220123_172122.mp4"
+    }
+  },
+  "WhipPostless": {
+    "datesTaught": [
+      "2022-05-11",
+      "2022-05-04",
+      "2022-01-23",
+      "2019-02-06"
+    ],
+    "difficulty": 5,
+    "name": "Whip (no post)",
+    "videos": {
+      "demo": "VID_20220123_172104.mp4"
+    }
+  },
+  "WhipThrow": {
+    "datesTaught": [
+      "2022-05-11",
+      "2022-01-23",
+      "2019-02-06"
+    ],
+    "difficulty": 7,
+    "name": "Whip with throw",
+    "videos": {
+      "demo": "VID_20220123_174431.mp4"
+    }
+  },
+  "WhipThrowPostless": {
+    "datesTaught": [
+      "2022-05-11",
+      "2022-01-23"
+    ],
+    "difficulty": 4,
+    "name": "Whip with throw (no post)",
+    "videos": {
+      "demo": "VID_20220123_174453.mp4"
+    }
+  },
+  "Whirlygig": {
+    "datesTaught": [
+      "2022-11-30",
+      "2020-02-05",
+      "2019-03-27"
+    ],
+    "difficulty": 5,
+    "name": "Whirlygig",
+    "videos": {
+      "demo": "VID-20200210-WA0004.mp4",
+      "slow": "VID-20200210-WA0010.mp4"
+    }
+  },
+  "Windmill": {
+    "datesTaught": [
+      "2025-10-15",
+      "2023-01-25",
+      "2022-01-30"
+    ],
+    "difficulty": 5,
+    "name": "Windmill",
+    "videos": {
+      "demo": "VID_20220130_171957.mp4"
+    }
+  },
+  "YeahDrop": {
+    "datesTaught": [
+      "2022-01-16",
+      "2020-01-15",
+      "2019-04-10"
+    ],
+    "difficulty": 3,
+    "name": "Yeah drop",
+    "videos": {
+      "demo": "VID-20200130-WA0005.mp4"
+    }
+  },
+  "YouGoIGo": {
+    "datesTaught": [
+      "2020-10-11"
+    ],
+    "difficulty": 1,
+    "name": "You Go I Go",
+    "videos": {
+      "demo": "VID_20201011_183603.mp4"
+    }
+  },
+  "Yoyo": {
+    "datesTaught": [
+      "2022-06-01",
+      "2019-06-27"
+    ],
+    "difficulty": 4,
+    "name": "Yoyo",
+    "videos": {
+      "demo": "VID-20190627-WA0002.mp4"
+    }
+  }
+}
