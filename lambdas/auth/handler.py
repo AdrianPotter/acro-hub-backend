@@ -287,6 +287,49 @@ def forgot_password(event, context):
     return _log_response(_ok({"message": "Password reset code sent to your email"}))
 
 
+def refresh_token(event, context):
+    """POST /auth/refresh — exchange a refresh token for new access and ID tokens."""
+    logger.info("refresh_token called")
+    try:
+        body = _parse_body(event)
+    except json.JSONDecodeError:
+        logger.warning("refresh_token: invalid JSON body")
+        return _log_response(_bad_request("Invalid JSON body"))
+
+    token = body.get("refreshToken")
+    if not token:
+        logger.warning("refresh_token: missing required field — refreshToken")
+        return _log_response(_bad_request("refreshToken is required"))
+
+    client = _get_client()
+    try:
+        response = client.initiate_auth(
+            AuthFlow="REFRESH_TOKEN_AUTH",
+            AuthParameters={"REFRESH_TOKEN": token},
+            ClientId=COGNITO_CLIENT_ID,
+        )
+    except ClientError as exc:
+        code = exc.response["Error"]["Code"]
+        if code in ("NotAuthorizedException", "UserNotFoundException"):
+            logger.warning("refresh_token: refresh token invalid or expired — %s", code)
+            return _log_response(_error(401, "Refresh token is invalid or has expired"))
+        logger.error("refresh_token: unexpected Cognito error — %s", exc)
+        return _log_response(_error(500, "Token refresh error"))
+
+    logger.info("refresh_token: successful")
+    auth_result = response.get("AuthenticationResult", {})
+    return _log_response(
+        _ok(
+            {
+                "accessToken": auth_result.get("AccessToken"),
+                "idToken": auth_result.get("IdToken"),
+                "expiresIn": auth_result.get("ExpiresIn"),
+                "tokenType": auth_result.get("TokenType"),
+            }
+        )
+    )
+
+
 def confirm_password(event, context):
     """POST /auth/confirm-password — confirm a new password with the reset code."""
     logger.info("confirm_password called")
@@ -358,6 +401,8 @@ def router(event, context):
         return confirm_registration(event, context)
     elif path == "/auth/confirm-password" and method == "POST":
         return confirm_password(event, context)
+    elif path == "/auth/refresh" and method == "POST":
+        return refresh_token(event, context)
     elif method == "OPTIONS":
         # Handle CORS preflight requests
         return {

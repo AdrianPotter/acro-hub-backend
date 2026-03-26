@@ -95,6 +95,31 @@ components:
           minLength: 8
           example: NewPassword1!
 
+    RefreshTokenRequest:
+      type: object
+      required: [refreshToken]
+      properties:
+        refreshToken:
+          type: string
+          description: Long-lived Cognito refresh token obtained from POST /auth/login
+
+    RefreshTokenResponse:
+      type: object
+      properties:
+        accessToken:
+          type: string
+          description: New short-lived Cognito access token
+        idToken:
+          type: string
+          description: New JWT ID token containing user claims
+        expiresIn:
+          type: integer
+          description: Token lifetime in seconds
+          example: 3600
+        tokenType:
+          type: string
+          example: Bearer
+
     AuthResponse:
       type: object
       properties:
@@ -511,6 +536,37 @@ paths:
                 $ref: "#/components/schemas/ErrorResponse"
         "404":
           description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /auth/refresh:
+    post:
+      summary: Refresh access and ID tokens using a refresh token
+      operationId: refreshToken
+      tags: [Authentication]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RefreshTokenRequest"
+      responses:
+        "200":
+          description: New access and ID tokens issued
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RefreshTokenResponse"
+        "400":
+          description: Missing refreshToken field
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Refresh token is invalid or has expired
           content:
             application/json:
               schema:
