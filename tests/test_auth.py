@@ -501,5 +501,144 @@ class TestAuthLogging(unittest.TestCase):
         self.assertIn("Returning status 200", messages)
 
 
+
+def _refresh_event(refresh_token="valid-refresh-token"):
+    return {"body": json.dumps({"refreshToken": refresh_token})}
+
+
+# ── Refresh token tests ───────────────────────────────────────────────────────
+
+class TestRefreshToken(unittest.TestCase):
+    def setUp(self):
+        auth_handler._cognito = None  # reset cached client
+
+    @patch("boto3.client")
+    def test_refresh_token_success(self, mock_boto_client):
+        mock_cognito = MagicMock()
+        mock_boto_client.return_value = mock_cognito
+        mock_cognito.initiate_auth.return_value = {
+            "AuthenticationResult": {
+                "AccessToken": "new-access-tok",
+                "IdToken": "new-id-tok",
+                "ExpiresIn": 3600,
+                "TokenType": "Bearer",
+            }
+        }
+
+        resp = auth_handler.refresh_token(_refresh_event(), None)
+
+        self.assertEqual(resp["statusCode"], 200)
+        body = json.loads(resp["body"])
+        self.assertEqual(body["accessToken"], "new-access-tok")
+        self.assertEqual(body["idToken"], "new-id-tok")
+        self.assertEqual(body["expiresIn"], 3600)
+        self.assertEqual(body["tokenType"], "Bearer")
+        self.assertNotIn("refreshToken", body)
+        mock_cognito.initiate_auth.assert_called_once_with(
+            AuthFlow="REFRESH_TOKEN_AUTH",
+            AuthParameters={"REFRESH_TOKEN": "valid-refresh-token"},
+            ClientId=auth_handler.COGNITO_CLIENT_ID,
+        )
+
+    @patch("boto3.client")
+    def test_refresh_token_invalid(self, mock_boto_client):
+        mock_cognito = MagicMock()
+        mock_boto_client.return_value = mock_cognito
+        mock_cognito.initiate_auth.side_effect = _client_error("NotAuthorizedException")
+
+        resp = auth_handler.refresh_token(_refresh_event(), None)
+
+        self.assertEqual(resp["statusCode"], 401)
+        body = json.loads(resp["body"])
+        self.assertIn("invalid or has expired", body["error"])
+
+    @patch("boto3.client")
+    def test_refresh_token_user_not_found(self, mock_boto_client):
+        mock_cognito = MagicMock()
+        mock_boto_client.return_value = mock_cognito
+        mock_cognito.initiate_auth.side_effect = _client_error("UserNotFoundException")
+
+        resp = auth_handler.refresh_token(_refresh_event(), None)
+
+        self.assertEqual(resp["statusCode"], 401)
+
+    def test_refresh_token_missing_field(self):
+        event = {"body": json.dumps({})}
+        resp = auth_handler.refresh_token(event, None)
+        self.assertEqual(resp["statusCode"], 400)
+        body = json.loads(resp["body"])
+        self.assertIn("refreshToken is required", body["error"])
+
+    def test_refresh_token_invalid_json(self):
+        event = {"body": "not-json"}
+        resp = auth_handler.refresh_token(event, None)
+        self.assertEqual(resp["statusCode"], 400)
+        body = json.loads(resp["body"])
+        self.assertIn("Invalid JSON", body["error"])
+
+    @patch("boto3.client")
+    def test_refresh_token_cognito_error(self, mock_boto_client):
+        mock_cognito = MagicMock()
+        mock_boto_client.return_value = mock_cognito
+        mock_cognito.initiate_auth.side_effect = _client_error("InternalErrorException")
+
+        resp = auth_handler.refresh_token(_refresh_event(), None)
+
+        self.assertEqual(resp["statusCode"], 500)
+
+    @patch("boto3.client")
+    def test_refresh_token_logs_entry_and_success(self, mock_boto_client):
+        mock_cognito = MagicMock()
+        mock_boto_client.return_value = mock_cognito
+        mock_cognito.initiate_auth.return_value = {
+            "AuthenticationResult": {
+                "AccessToken": "tok",
+                "IdToken": "id-tok",
+                "ExpiresIn": 3600,
+                "TokenType": "Bearer",
+            }
+        }
+
+        with self.assertLogs("root", level="INFO") as cm:
+            auth_handler.refresh_token(_refresh_event(), None)
+
+        messages = "\n".join(cm.output)
+        self.assertIn("refresh_token called", messages)
+        self.assertIn("Returning status 200", messages)
+
+
+# ── Router tests ──────────────────────────────────────────────────────────────
+
+class TestRouter(unittest.TestCase):
+    def setUp(self):
+        auth_handler._cognito = None
+
+    @patch("boto3.client")
+    def test_router_refresh(self, mock_boto_client):
+        mock_cognito = MagicMock()
+        mock_boto_client.return_value = mock_cognito
+        mock_cognito.initiate_auth.return_value = {
+            "AuthenticationResult": {
+                "AccessToken": "tok",
+                "IdToken": "id-tok",
+                "ExpiresIn": 3600,
+                "TokenType": "Bearer",
+            }
+        }
+        event = {
+            "path": "/auth/refresh",
+            "httpMethod": "POST",
+            "body": json.dumps({"refreshToken": "tok"}),
+            "headers": {},
+        }
+        resp = auth_handler.router(event, None)
+        self.assertEqual(resp["statusCode"], 200)
+
+    def test_router_unknown_path(self):
+        event = {"path": "/auth/unknown", "httpMethod": "POST", "body": "{}", "headers": {}}
+        resp = auth_handler.router(event, None)
+        self.assertEqual(resp["statusCode"], 404)
+
+
 if __name__ == "__main__":
     unittest.main()
