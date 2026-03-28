@@ -190,6 +190,12 @@ components:
           items:
             type: string
           example: [static, beginner]
+        alternateNames:
+          type: array
+          items:
+            type: string
+          description: Alternative names or aliases for the move
+          example: [Star Pose, Side Star]
         createdAt:
           type: string
           format: date-time
@@ -223,6 +229,11 @@ components:
           type: array
           items:
             type: string
+        alternateNames:
+          type: array
+          items:
+            type: string
+          description: Alternative names or aliases for the move
 
     MoveUpdateRequest:
       type: object
@@ -244,6 +255,11 @@ components:
           type: array
           items:
             type: string
+        alternateNames:
+          type: array
+          items:
+            type: string
+          description: Alternative names or aliases for the move
 
     MovesListResponse:
       type: object

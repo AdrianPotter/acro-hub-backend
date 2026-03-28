@@ -246,7 +246,8 @@ curl -X POST https://api.acrohub.org/moves \
     "description": "Classic acrobalance star pose",
     "difficulty": "easy",
     "category": "acrobalance",
-    "tags": ["static","beginner"]
+    "tags": ["static","beginner"],
+    "alternateNames": ["Star Pose", "Side Star"]
   }'
 ```
 
