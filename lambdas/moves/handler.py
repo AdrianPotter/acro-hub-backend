@@ -206,6 +206,7 @@ def create_move(event, context):
         "category": category,
         "videoKey": body.get("videoKey", ""),
         "tags": body.get("tags", []),
+        "alternateNames": body.get("alternateNames", []),
         "createdAt": now,
         "updatedAt": now,
     }
@@ -255,7 +256,7 @@ def update_move(event, context):
         return _log_response(_not_found(f"Move '{move_id}' not found"))
 
     # Build update expression dynamically from provided fields
-    updatable = ["name", "description", "difficulty", "category", "videoKey", "tags"]
+    updatable = ["name", "description", "difficulty", "category", "videoKey", "tags", "alternateNames"]
     update_parts = []
     expr_names = {}
     expr_values = {}

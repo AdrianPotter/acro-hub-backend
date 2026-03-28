@@ -25,6 +25,7 @@ SAMPLE_MOVE = {
     "category": "acrobalance",
     "videoKey": "videos/move-123/abc.mp4",
     "tags": ["static", "beginner"],
+    "alternateNames": ["Star Pose", "Side Star"],
     "createdAt": "2024-01-01T00:00:00+00:00",
     "updatedAt": "2024-01-01T00:00:00+00:00",
 }
@@ -232,6 +233,34 @@ class TestCreateMove(unittest.TestCase):
         resp = moves_handler.create_move(_create_event({"name": "Star"}, groups=["admins"]), None)
         self.assertEqual(resp["statusCode"], 201)
 
+    @patch("boto3.resource")
+    def test_create_move_with_alternate_names(self, mock_resource):
+        mock_table = MagicMock()
+        mock_resource.return_value.Table.return_value = mock_table
+        mock_table.put_item.return_value = {}
+
+        payload = {
+            "name": "Star",
+            "alternateNames": ["Star Pose", "Side Star"],
+        }
+        resp = moves_handler.create_move(_create_event(payload, groups=["contributors"]), None)
+
+        self.assertEqual(resp["statusCode"], 201)
+        body = json.loads(resp["body"])
+        self.assertEqual(body["alternateNames"], ["Star Pose", "Side Star"])
+
+    @patch("boto3.resource")
+    def test_create_move_default_alternate_names_empty(self, mock_resource):
+        mock_table = MagicMock()
+        mock_resource.return_value.Table.return_value = mock_table
+        mock_table.put_item.return_value = {}
+
+        resp = moves_handler.create_move(_create_event({"name": "Star"}, groups=["contributors"]), None)
+
+        self.assertEqual(resp["statusCode"], 201)
+        body = json.loads(resp["body"])
+        self.assertEqual(body["alternateNames"], [])
+
 
 # ── Update move ───────────────────────────────────────────────────────────────
 
@@ -295,6 +324,22 @@ class TestUpdateMove(unittest.TestCase):
         mock_table.update_item.return_value = {"Attributes": SAMPLE_MOVE}
         resp = moves_handler.update_move(_id_event("move-123", {"name": "X"}, groups=["admins"]), None)
         self.assertEqual(resp["statusCode"], 200)
+
+    @patch("boto3.resource")
+    def test_update_move_alternate_names(self, mock_resource):
+        mock_table = MagicMock()
+        mock_resource.return_value.Table.return_value = mock_table
+        updated = {**SAMPLE_MOVE, "alternateNames": ["New Alias"]}
+        mock_table.get_item.return_value = {"Item": SAMPLE_MOVE}
+        mock_table.update_item.return_value = {"Attributes": updated}
+
+        resp = moves_handler.update_move(
+            _id_event("move-123", {"alternateNames": ["New Alias"]}, groups=["curators"]), None
+        )
+
+        self.assertEqual(resp["statusCode"], 200)
+        body = json.loads(resp["body"])
+        self.assertEqual(body["alternateNames"], ["New Alias"])
 
 
 # ── Delete move ───────────────────────────────────────────────────────────────
