@@ -64,6 +64,16 @@ jobs:
         working-directory: terraform
         run: terraform init
 
+      - name: Terraform pre-plan debug
+        working-directory: terraform
+        run: |
+          aws s3api head-bucket --bucket acro-hub-videos-prod
+          terraform workspace show
+          cat .terraform/terraform.tfstate | sed -n '1,200p'
+          terraform state pull | jq -r '.serial, .lineage'
+          aws sts get-caller-identity
+          echo "AWS_REGION=$AWS_REGION AWS_DEFAULT_REGION=$AWS_DEFAULT_REGION"
+
       - name: Terraform Plan
         working-directory: terraform
         run: terraform plan -var="environment=prod"
