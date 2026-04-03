@@ -29,6 +29,7 @@ resource "aws_iam_policy" "github_actions_deploy" {
         Sid    = "TerraformStateS3"
         Effect = "Allow"
         Action = [
+          "s3:HeadBucket",
           "s3:ListBucket",
           "s3:GetObject",
           "s3:PutObject",
