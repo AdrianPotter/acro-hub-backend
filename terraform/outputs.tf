@@ -27,3 +27,15 @@ output "route53_name_servers" {
   description = "Name servers for the Route 53 hosted zone (add these to your domain registrar)"
   value       = data.aws_route53_zone.acro_hub.name_servers
 }
+
+output "github_actions_aws_access_key_id" {
+  description = "AWS access key ID for the GitHub Actions deploy user (store as GitHub secret AWS_ACCESS_KEY_ID)"
+  value       = aws_iam_access_key.github_actions.id
+  sensitive   = true
+}
+
+output "github_actions_aws_secret_access_key" {
+  description = "AWS secret access key for the GitHub Actions deploy user (store as GitHub secret AWS_SECRET_ACCESS_KEY)"
+  value       = aws_iam_access_key.github_actions.secret
+  sensitive   = true
+}
