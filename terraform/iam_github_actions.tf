@@ -44,12 +44,12 @@ resource "aws_iam_policy" "github_actions_deploy" {
         Sid    = "S3VideosBucket"
         Effect = "Allow"
         Action = [
-          "s3:HeadBucket",
+          "s3:ListBucket",
           "s3:CreateBucket",
           "s3:DeleteBucket",
           "s3:GetBucketAcl",
           "s3:GetBucketCORS",
-          "s3:GetBucketLifecycleConfiguration",
+          "s3:GetLifecycleConfiguration",
           "s3:GetBucketLocation",
           "s3:GetBucketLogging",
           "s3:GetBucketObjectLockConfiguration",
@@ -62,7 +62,7 @@ resource "aws_iam_policy" "github_actions_deploy" {
           "s3:GetBucketWebsite",
           "s3:GetEncryptionConfiguration",
           "s3:PutBucketCORS",
-          "s3:PutBucketLifecycleConfiguration",
+          "s3:PutLifecycleConfiguration",
           "s3:PutBucketPublicAccessBlock",
           "s3:PutBucketTagging",
           "s3:PutBucketVersioning",
