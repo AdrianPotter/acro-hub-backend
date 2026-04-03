@@ -1,0 +1,73 @@
+name: Deploy
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    name: Package and Deploy
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Cache pip dependencies
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('lambdas/**/requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
+
+      - name: Package Lambda functions
+        run: |
+          for svc in auth moves videos events; do
+            echo "Packaging $svc..."
+            svc_dir="lambdas/$svc"
+            pkg_dir="$svc_dir/package"
+            zip_file="$svc_dir/function.zip"
+
+            rm -rf "$pkg_dir" "$zip_file"
+            mkdir -p "$pkg_dir"
+
+            pip install -r "$svc_dir/requirements.txt" -t "$pkg_dir" --quiet
+
+            cp "$svc_dir/handler.py" "$pkg_dir/"
+
+            (cd "$pkg_dir" && zip -r "../function.zip" . -q)
+
+            rm -rf "$pkg_dir"
+            echo "  Created $zip_file ($(du -sh "$zip_file" | cut -f1))"
+          done
+
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@v3
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: eu-west-1
+
+      - name: Terraform Init
+        working-directory: terraform
+        run: terraform init
+
+      - name: Terraform Plan
+        working-directory: terraform
+        run: terraform plan -var="environment=prod"
+
+      - name: Terraform Apply
+        working-directory: terraform
+        run: terraform apply -auto-approve -var="environment=prod"

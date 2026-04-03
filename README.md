@@ -56,6 +56,9 @@ acro-hub-backend/
 ├── PROMPT.md               # Original project brief
 ├── README.md               # This file
 ├── .gitignore
+├── .github/
+│   └── workflows/
+│       └── deploy.yml      # CI/CD: package Lambdas + terraform apply on merge to main
 ├── lambdas/
 │   ├── auth/               # Cognito authentication Lambda
 │   │   ├── handler.py
@@ -135,6 +138,51 @@ pytest tests/ -v
 ```
 
 All Lambda business logic is fully unit-tested with mocked AWS SDK calls — no real AWS resources are required.
+
+## Automated Deployment (GitHub Actions)
+
+A workflow at `.github/workflows/deploy.yml` runs automatically on every push to `main`. It:
+
+1. Packages each Lambda (`auth`, `moves`, `videos`, `events`) into a `function.zip` with its pip dependencies.
+2. Runs `terraform init` → `terraform plan` → `terraform apply -auto-approve -var="environment=prod"` to deploy all infrastructure and Lambda code changes.
+
+### Required repository secrets
+
+The workflow authenticates with AWS using two repository secrets. Add them once under **Settings → Secrets and variables → Actions → New repository secret**:
+
+| Secret name | Value |
+|---|---|
+| `AWS_ACCESS_KEY_ID` | Access key ID for a dedicated deploy IAM user |
+| `AWS_SECRET_ACCESS_KEY` | Corresponding secret access key |
+
+### Minimum IAM permissions
+
+The IAM user (or role) used by the workflow needs at least the following permissions:
+
+| AWS service | Required actions |
+|---|---|
+| **S3** | `s3:GetObject`, `s3:PutObject`, `s3:DeleteObject`, `s3:ListBucket` on the Terraform state bucket (`acro-hub-terraform-state`) and the videos bucket |
+| **Lambda** | `lambda:CreateFunction`, `lambda:UpdateFunctionCode`, `lambda:UpdateFunctionConfiguration`, `lambda:GetFunction`, `lambda:DeleteFunction`, `lambda:AddPermission`, `lambda:RemovePermission`, `lambda:ListTags`, `lambda:TagResource`, `lambda:UntagResource` |
+| **IAM** | `iam:CreateRole`, `iam:DeleteRole`, `iam:AttachRolePolicy`, `iam:DetachRolePolicy`, `iam:PutRolePolicy`, `iam:DeleteRolePolicy`, `iam:GetRole`, `iam:GetRolePolicy`, `iam:PassRole`, `iam:ListRolePolicies`, `iam:ListAttachedRolePolicies`, `iam:ListInstanceProfilesForRole`, `iam:TagRole`, `iam:UntagRole` |
+| **API Gateway** | `apigateway:*` on the relevant REST APIs |
+| **Cognito** | `cognito-idp:*` on the user pool |
+| **DynamoDB** | `dynamodb:CreateTable`, `dynamodb:DeleteTable`, `dynamodb:DescribeTable`, `dynamodb:UpdateTable`, `dynamodb:ListTagsOfResource`, `dynamodb:TagResource`, `dynamodb:UntagResource` |
+| **CloudWatch** | `logs:CreateLogGroup`, `logs:DeleteLogGroup`, `logs:PutRetentionPolicy`, `logs:DescribeLogGroups`, `logs:ListTagsLogGroup`, `logs:TagLogGroup`, `logs:UntagLogGroup` |
+| **Route 53** | `route53:ChangeResourceRecordSets`, `route53:ListResourceRecordSets`, `route53:GetHostedZone` |
+| **ACM** | `acm:RequestCertificate`, `acm:DescribeCertificate`, `acm:DeleteCertificate`, `acm:AddTagsToCertificate`, `acm:ListTagsForCertificate` |
+
+> **Tip:** For a quick start you can attach the AWS-managed `AdministratorAccess` policy to the deploy user, then scope it down to the minimum permissions above once everything is working.
+
+### Adding the secrets in GitHub
+
+1. Go to the repository on GitHub.
+2. Click **Settings** → **Secrets and variables** → **Actions**.
+3. Click **New repository secret** for each secret in the table above.
+4. Paste the value and click **Add secret**.
+
+Once both secrets are present, the next push to `main` will trigger a full deploy automatically.
+
+---
 
 ## Deployment
 
