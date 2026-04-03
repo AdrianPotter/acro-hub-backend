@@ -29,7 +29,6 @@ resource "aws_iam_policy" "github_actions_deploy" {
         Sid    = "TerraformStateS3"
         Effect = "Allow"
         Action = [
-          "s3:HeadBucket",
           "s3:ListBucket",
           "s3:GetObject",
           "s3:PutObject",
@@ -45,6 +44,7 @@ resource "aws_iam_policy" "github_actions_deploy" {
         Sid    = "S3VideosBucket"
         Effect = "Allow"
         Action = [
+          "s3:HeadBucket",
           "s3:CreateBucket",
           "s3:DeleteBucket",
           "s3:GetBucketAcl",
