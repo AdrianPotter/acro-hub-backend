@@ -61,6 +61,7 @@ resource "aws_iam_policy" "github_actions_deploy" {
           "s3:GetBucketVersioning",
           "s3:GetAccelerateConfiguration",
           "s3:GetBucketWebsite",
+          "s3:GetReplicationConfiguration",
           "s3:GetEncryptionConfiguration",
           "s3:PutBucketCORS",
           "s3:PutLifecycleConfiguration",
