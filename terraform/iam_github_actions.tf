@@ -204,14 +204,23 @@ resource "aws_iam_policy" "github_actions_deploy" {
         ]
         Resource = "arn:aws:dynamodb:${var.aws_region}:*:table/${var.app_name}-*"
       },
-      # CloudWatch Logs – log group management
+      # CloudWatch Logs – DescribeLogGroups is a list-level API that AWS evaluates
+      # against the account/region scope, so it requires Resource: "*".
+      {
+        Sid    = "CloudWatchLogsDescribe"
+        Effect = "Allow"
+        Action = [
+          "logs:DescribeLogGroups",
+        ]
+        Resource = "*"
+      },
+      # CloudWatch Logs – log group management (scoped to app-owned log groups)
       {
         Sid    = "CloudWatchLogsManagement"
         Effect = "Allow"
         Action = [
           "logs:CreateLogGroup",
           "logs:DeleteLogGroup",
-          "logs:DescribeLogGroups",
           "logs:ListTagsForResource",
           "logs:ListTagsLogGroup",
           "logs:PutRetentionPolicy",
