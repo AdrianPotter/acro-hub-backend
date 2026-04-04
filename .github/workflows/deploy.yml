@@ -65,10 +65,6 @@ jobs:
         working-directory: terraform
         run: terraform init
 
-      - name: Terraform Plan
-        working-directory: terraform
-        run: terraform plan -var="environment=prod"
-
       - name: Terraform Apply
         working-directory: terraform
         run: terraform apply -auto-approve -var="environment=prod"
