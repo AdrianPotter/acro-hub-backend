@@ -10,10 +10,74 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  package:
+    name: Package ${{ matrix.lambda }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    strategy:
+      matrix:
+        lambda: [auth, moves, videos, events]
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Cache Lambda zip (${{ matrix.lambda }})
+        id: cache-zip
+        uses: actions/cache@v4
+        with:
+          path: lambdas/${{ matrix.lambda }}/function.zip
+          key: lambda-${{ matrix.lambda }}-${{ hashFiles(format('lambdas/{0}/**', matrix.lambda)) }}
+
+      - name: Set up Python
+        if: steps.cache-zip.outputs.cache-hit != 'true'
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Cache pip dependencies
+        if: steps.cache-zip.outputs.cache-hit != 'true'
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ matrix.lambda }}-${{ hashFiles(format('lambdas/{0}/requirements.txt', matrix.lambda)) }}
+          restore-keys: |
+            ${{ runner.os }}-pip-${{ matrix.lambda }}-
+
+      - name: Package Lambda function
+        if: steps.cache-zip.outputs.cache-hit != 'true'
+        run: |
+          svc="${{ matrix.lambda }}"
+          svc_dir="lambdas/$svc"
+          pkg_dir="$svc_dir/package"
+          zip_file="$svc_dir/function.zip"
+
+          rm -rf "$pkg_dir" "$zip_file"
+          mkdir -p "$pkg_dir"
+
+          pip install -r "$svc_dir/requirements.txt" -t "$pkg_dir" --quiet
+
+          cp "$svc_dir/handler.py" "$pkg_dir/"
+
+          (cd "$pkg_dir" && zip -r "../function.zip" . -q)
+
+          rm -rf "$pkg_dir"
+          echo "Created $zip_file ($(du -sh "$zip_file" | cut -f1))"
+
+      - name: Upload Lambda artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: lambda-${{ matrix.lambda }}
+          path: lambdas/${{ matrix.lambda }}/function.zip
+          retention-days: 1
+
   deploy:
-    name: Package and Deploy
+    name: Deploy
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    needs: package
     permissions:
       contents: read
 
@@ -21,38 +85,16 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Set up Python
-        uses: actions/setup-python@v5
+      - name: Download Lambda artifacts
+        uses: actions/download-artifact@v4
         with:
-          python-version: "3.12"
+          pattern: lambda-*
+          path: lambda-artifacts
 
-      - name: Cache pip dependencies
-        uses: actions/cache@v4
-        with:
-          path: ~/.cache/pip
-          key: ${{ runner.os }}-pip-${{ hashFiles('lambdas/**/requirements.txt') }}
-          restore-keys: |
-            ${{ runner.os }}-pip-
-
-      - name: Package Lambda functions
+      - name: Place Lambda zips
         run: |
           for svc in auth moves videos events; do
-            echo "Packaging $svc..."
-            svc_dir="lambdas/$svc"
-            pkg_dir="$svc_dir/package"
-            zip_file="$svc_dir/function.zip"
-
-            rm -rf "$pkg_dir" "$zip_file"
-            mkdir -p "$pkg_dir"
-
-            pip install -r "$svc_dir/requirements.txt" -t "$pkg_dir" --quiet
-
-            cp "$svc_dir/handler.py" "$pkg_dir/"
-
-            (cd "$pkg_dir" && zip -r "../function.zip" . -q)
-
-            rm -rf "$pkg_dir"
-            echo "  Created $zip_file ($(du -sh "$zip_file" | cut -f1))"
+            cp lambda-artifacts/lambda-$svc/function.zip lambdas/$svc/function.zip
           done
 
       - name: Set up Terraform
@@ -65,10 +107,18 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: eu-west-1
 
+      - name: Cache Terraform providers
+        uses: actions/cache@v4
+        with:
+          path: terraform/.terraform
+          key: terraform-${{ runner.os }}-${{ hashFiles('terraform/.terraform.lock.hcl', 'terraform/main.tf') }}
+          restore-keys: |
+            terraform-${{ runner.os }}-
+
       - name: Terraform Init
         working-directory: terraform
         run: terraform init
 
       - name: Terraform Apply
         working-directory: terraform
-        run: terraform apply -auto-approve -var="environment=prod"
+        run: terraform apply -auto-approve -parallelism=20 -var="environment=prod"
