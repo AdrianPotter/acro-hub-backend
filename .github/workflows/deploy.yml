@@ -18,7 +18,7 @@ jobs:
       contents: read
     strategy:
       matrix:
-        lambda: [auth, moves, videos, events]
+        lambda: [auth, moves, videos, events, users]
 
     steps:
       - name: Checkout
@@ -93,7 +93,7 @@ jobs:
 
       - name: Place Lambda zips
         run: |
-          for svc in auth moves videos events; do
+          for svc in auth moves videos events users; do
             cp lambda-artifacts/lambda-$svc/function.zip lambdas/$svc/function.zip
           done
 

@@ -16,6 +16,10 @@ data "local_file" "events_zip_check" {
   filename = "${path.module}/../lambdas/events/function.zip"
 }
 
+data "local_file" "users_zip_check" {
+  filename = "${path.module}/../lambdas/users/function.zip"
+}
+
 # ── Shared Lambda assume-role policy ─────────────────────────────────────────
 
 data "aws_iam_policy_document" "lambda_assume_role" {
@@ -252,4 +256,61 @@ resource "aws_lambda_function" "events" {
   }
 
   depends_on = [aws_cloudwatch_log_group.events_lambda]
+}
+
+# ── Users Lambda ──────────────────────────────────────────────────────────────
+
+resource "aws_iam_role" "users_lambda" {
+  name               = "${var.app_name}-users-lambda-${var.environment}"
+  assume_role_policy = data.aws_iam_policy_document.lambda_assume_role.json
+}
+
+resource "aws_iam_role_policy_attachment" "users_lambda_basic" {
+  role       = aws_iam_role.users_lambda.name
+  policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+}
+
+resource "aws_iam_role_policy" "users_lambda_cognito" {
+  name = "${var.app_name}-users-cognito-${var.environment}"
+  role = aws_iam_role.users_lambda.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = [
+          "cognito-idp:ListUsers",
+          "cognito-idp:AdminGetUser",
+          "cognito-idp:AdminListGroupsForUser",
+          "cognito-idp:AdminAddUserToGroup",
+          "cognito-idp:AdminRemoveUserFromGroup",
+          "cognito-idp:AdminDisableUser",
+          "cognito-idp:AdminEnableUser",
+          "cognito-idp:AdminDeleteUser",
+        ]
+        Resource = aws_cognito_user_pool.acro_hub.arn
+      }
+    ]
+  })
+}
+
+resource "aws_lambda_function" "users" {
+  function_name = "${var.app_name}-users-${var.environment}"
+  role          = aws_iam_role.users_lambda.arn
+  filename      = "${path.module}/../lambdas/users/function.zip"
+  handler       = "handler.router"
+  runtime       = "python3.14"
+  timeout       = 30
+  memory_size   = 256
+
+  source_code_hash = filebase64sha256("${path.module}/../lambdas/users/function.zip")
+
+  environment {
+    variables = {
+      COGNITO_USER_POOL_ID = aws_cognito_user_pool.acro_hub.id
+    }
+  }
+
+  depends_on = [aws_cloudwatch_log_group.users_lambda]
 }
