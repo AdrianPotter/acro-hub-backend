@@ -32,10 +32,16 @@ Backend API for [Acro Hub](https://github.com/AdrianPotter/acro-hub-frontend) �
                         │       │    S3 Videos Bucket    DynamoDB: moves   │
                         │       │    (pre-signed URLs)                     │
                         │       │                                          │
-                        │       └── /events/*──▶ Lambda: events            │
+                        │       ├── /events/*──▶ Lambda: events            │
+                        │       │                    │                     │
+                        │       │                    ▼                     │
+                        │       │            DynamoDB: acro-hub-events     │
+                        │       │                                          │
+                        │       └── /users/* ──▶ Lambda: users             │
                         │                            │                     │
                         │                            ▼                     │
-                        │                    DynamoDB: acro-hub-events     │
+                        │                    Cognito User Pool             │
+                        │                    (admin operations)            │
                         │                                                  │
                         │  CloudWatch (dashboards & alarms)                │
                         └─────────────────────────────────────────────────┘
@@ -69,7 +75,10 @@ acro-hub-backend/
 │   ├── videos/             # S3 pre-signed URL Lambda
 │   │   ├── handler.py
 │   │   └── requirements.txt
-│   └── events/             # Event-tracking Lambda
+│   ├── events/             # Event-tracking Lambda
+│   │   ├── handler.py
+│   │   └── requirements.txt
+│   └── users/              # Admin user-management Lambda
 │       ├── handler.py
 │       └── requirements.txt
 ├── tests/
@@ -77,7 +86,8 @@ acro-hub-backend/
 │   ├── test_auth.py
 │   ├── test_moves.py
 │   ├── test_videos.py
-│   └── test_events.py
+│   ├── test_events.py
+│   └── test_users.py
 ├── terraform/
 │   ├── main.tf             # Provider & backend config
 │   ├── variables.tf
@@ -110,6 +120,7 @@ pip install -r lambdas/auth/requirements.txt
 pip install -r lambdas/moves/requirements.txt
 pip install -r lambdas/videos/requirements.txt
 pip install -r lambdas/events/requirements.txt
+pip install -r lambdas/users/requirements.txt
 pip install pytest
 ```
 
@@ -328,6 +339,56 @@ curl -X POST https://api.acrohub.org/events \
   -H "Authorization: Bearer <TOKEN>" \
   -H "Content-Type: application/json" \
   -d '{"eventType":"move_view","resourceId":"<moveId>"}'
+```
+
+### User management (admin only)
+
+All `/users` endpoints require the caller to be a member of the **admins** Cognito group.
+
+#### List all users
+
+```bash
+curl https://api.acrohub.org/users \
+  -H "Authorization: Bearer <ADMIN_TOKEN>"
+```
+
+#### Get a single user
+
+```bash
+curl https://api.acrohub.org/users/<username> \
+  -H "Authorization: Bearer <ADMIN_TOKEN>"
+```
+
+#### Update a user's groups
+
+```bash
+curl -X PUT https://api.acrohub.org/users/<username>/groups \
+  -H "Authorization: Bearer <ADMIN_TOKEN>" \
+  -H "Content-Type: application/json" \
+  -d '{"groups":["curators"]}'
+```
+
+Valid group names: `admins`, `curators`, `contributors`. The supplied list **replaces** the user's current memberships.
+
+#### Disable a user
+
+```bash
+curl -X POST https://api.acrohub.org/users/<username>/disable \
+  -H "Authorization: Bearer <ADMIN_TOKEN>"
+```
+
+#### Enable a user
+
+```bash
+curl -X POST https://api.acrohub.org/users/<username>/enable \
+  -H "Authorization: Bearer <ADMIN_TOKEN>"
+```
+
+#### Delete a user
+
+```bash
+curl -X DELETE https://api.acrohub.org/users/<username> \
+  -H "Authorization: Bearer <ADMIN_TOKEN>"
 ```
 
 ## Configuration

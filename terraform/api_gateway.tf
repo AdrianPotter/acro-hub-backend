@@ -54,6 +54,14 @@ resource "aws_lambda_permission" "events_apigw" {
   source_arn    = "${aws_api_gateway_rest_api.acro_hub.execution_arn}/*/*"
 }
 
+resource "aws_lambda_permission" "users_apigw" {
+  statement_id  = "AllowAPIGatewayInvoke"
+  action        = "lambda:InvokeFunction"
+  function_name = aws_lambda_function.users.function_name
+  principal     = "apigateway.amazonaws.com"
+  source_arn    = "${aws_api_gateway_rest_api.acro_hub.execution_arn}/*/*"
+}
+
 # ── /auth resource ────────────────────────────────────────────────────────────
 
 resource "aws_api_gateway_resource" "auth" {
@@ -1042,6 +1050,387 @@ resource "aws_api_gateway_integration_response" "events_options" {
   }
 }
 
+# ── /users resource ───────────────────────────────────────────────────────────
+
+resource "aws_api_gateway_resource" "users" {
+  rest_api_id = aws_api_gateway_rest_api.acro_hub.id
+  parent_id   = aws_api_gateway_rest_api.acro_hub.root_resource_id
+  path_part   = "users"
+}
+
+resource "aws_api_gateway_resource" "users_username" {
+  rest_api_id = aws_api_gateway_rest_api.acro_hub.id
+  parent_id   = aws_api_gateway_resource.users.id
+  path_part   = "{username}"
+}
+
+resource "aws_api_gateway_resource" "users_username_groups" {
+  rest_api_id = aws_api_gateway_rest_api.acro_hub.id
+  parent_id   = aws_api_gateway_resource.users_username.id
+  path_part   = "groups"
+}
+
+resource "aws_api_gateway_resource" "users_username_disable" {
+  rest_api_id = aws_api_gateway_rest_api.acro_hub.id
+  parent_id   = aws_api_gateway_resource.users_username.id
+  path_part   = "disable"
+}
+
+resource "aws_api_gateway_resource" "users_username_enable" {
+  rest_api_id = aws_api_gateway_rest_api.acro_hub.id
+  parent_id   = aws_api_gateway_resource.users_username.id
+  path_part   = "enable"
+}
+
+# GET /users
+
+resource "aws_api_gateway_method" "users_get" {
+  rest_api_id   = aws_api_gateway_rest_api.acro_hub.id
+  resource_id   = aws_api_gateway_resource.users.id
+  http_method   = "GET"
+  authorization = "COGNITO_USER_POOLS"
+  authorizer_id = aws_api_gateway_authorizer.cognito.id
+}
+
+resource "aws_api_gateway_integration" "users_get" {
+  rest_api_id             = aws_api_gateway_rest_api.acro_hub.id
+  resource_id             = aws_api_gateway_resource.users.id
+  http_method             = aws_api_gateway_method.users_get.http_method
+  integration_http_method = "POST"
+  type                    = "AWS_PROXY"
+  uri                     = "arn:aws:apigateway:${var.aws_region}:lambda:path/2015-03-31/functions/${aws_lambda_function.users.arn}/invocations"
+}
+
+# OPTIONS /users (CORS)
+
+resource "aws_api_gateway_method" "users_options" {
+  rest_api_id   = aws_api_gateway_rest_api.acro_hub.id
+  resource_id   = aws_api_gateway_resource.users.id
+  http_method   = "OPTIONS"
+  authorization = "NONE"
+}
+
+resource "aws_api_gateway_integration" "users_options" {
+  rest_api_id = aws_api_gateway_rest_api.acro_hub.id
+  resource_id = aws_api_gateway_resource.users.id
+  http_method = aws_api_gateway_method.users_options.http_method
+  type        = "MOCK"
+  request_templates = {
+    "application/json" = "{\"statusCode\": 200}"
+  }
+}
+
+resource "aws_api_gateway_method_response" "users_options_200" {
+  rest_api_id = aws_api_gateway_rest_api.acro_hub.id
+  resource_id = aws_api_gateway_resource.users.id
+  http_method = aws_api_gateway_method.users_options.http_method
+  status_code = "200"
+
+  response_parameters = {
+    "method.response.header.Access-Control-Allow-Headers" = true
+    "method.response.header.Access-Control-Allow-Methods" = true
+    "method.response.header.Access-Control-Allow-Origin"  = true
+  }
+}
+
+resource "aws_api_gateway_integration_response" "users_options" {
+  rest_api_id = aws_api_gateway_rest_api.acro_hub.id
+  resource_id = aws_api_gateway_resource.users.id
+  http_method = aws_api_gateway_method.users_options.http_method
+  status_code = aws_api_gateway_method_response.users_options_200.status_code
+
+  depends_on = [aws_api_gateway_integration.users_options]
+
+  response_parameters = {
+    "method.response.header.Access-Control-Allow-Headers" = "'Content-Type,Authorization'"
+    "method.response.header.Access-Control-Allow-Methods" = "'OPTIONS,GET'"
+    "method.response.header.Access-Control-Allow-Origin"  = "'*'"
+  }
+}
+
+# GET /users/{username}
+
+resource "aws_api_gateway_method" "users_username_get" {
+  rest_api_id   = aws_api_gateway_rest_api.acro_hub.id
+  resource_id   = aws_api_gateway_resource.users_username.id
+  http_method   = "GET"
+  authorization = "COGNITO_USER_POOLS"
+  authorizer_id = aws_api_gateway_authorizer.cognito.id
+}
+
+resource "aws_api_gateway_integration" "users_username_get" {
+  rest_api_id             = aws_api_gateway_rest_api.acro_hub.id
+  resource_id             = aws_api_gateway_resource.users_username.id
+  http_method             = aws_api_gateway_method.users_username_get.http_method
+  integration_http_method = "POST"
+  type                    = "AWS_PROXY"
+  uri                     = "arn:aws:apigateway:${var.aws_region}:lambda:path/2015-03-31/functions/${aws_lambda_function.users.arn}/invocations"
+}
+
+# DELETE /users/{username}
+
+resource "aws_api_gateway_method" "users_username_delete" {
+  rest_api_id   = aws_api_gateway_rest_api.acro_hub.id
+  resource_id   = aws_api_gateway_resource.users_username.id
+  http_method   = "DELETE"
+  authorization = "COGNITO_USER_POOLS"
+  authorizer_id = aws_api_gateway_authorizer.cognito.id
+}
+
+resource "aws_api_gateway_integration" "users_username_delete" {
+  rest_api_id             = aws_api_gateway_rest_api.acro_hub.id
+  resource_id             = aws_api_gateway_resource.users_username.id
+  http_method             = aws_api_gateway_method.users_username_delete.http_method
+  integration_http_method = "POST"
+  type                    = "AWS_PROXY"
+  uri                     = "arn:aws:apigateway:${var.aws_region}:lambda:path/2015-03-31/functions/${aws_lambda_function.users.arn}/invocations"
+}
+
+# OPTIONS /users/{username} (CORS)
+
+resource "aws_api_gateway_method" "users_username_options" {
+  rest_api_id   = aws_api_gateway_rest_api.acro_hub.id
+  resource_id   = aws_api_gateway_resource.users_username.id
+  http_method   = "OPTIONS"
+  authorization = "NONE"
+}
+
+resource "aws_api_gateway_integration" "users_username_options" {
+  rest_api_id = aws_api_gateway_rest_api.acro_hub.id
+  resource_id = aws_api_gateway_resource.users_username.id
+  http_method = aws_api_gateway_method.users_username_options.http_method
+  type        = "MOCK"
+  request_templates = {
+    "application/json" = "{\"statusCode\": 200}"
+  }
+}
+
+resource "aws_api_gateway_method_response" "users_username_options_200" {
+  rest_api_id = aws_api_gateway_rest_api.acro_hub.id
+  resource_id = aws_api_gateway_resource.users_username.id
+  http_method = aws_api_gateway_method.users_username_options.http_method
+  status_code = "200"
+
+  response_parameters = {
+    "method.response.header.Access-Control-Allow-Headers" = true
+    "method.response.header.Access-Control-Allow-Methods" = true
+    "method.response.header.Access-Control-Allow-Origin"  = true
+  }
+}
+
+resource "aws_api_gateway_integration_response" "users_username_options" {
+  rest_api_id = aws_api_gateway_rest_api.acro_hub.id
+  resource_id = aws_api_gateway_resource.users_username.id
+  http_method = aws_api_gateway_method.users_username_options.http_method
+  status_code = aws_api_gateway_method_response.users_username_options_200.status_code
+
+  depends_on = [aws_api_gateway_integration.users_username_options]
+
+  response_parameters = {
+    "method.response.header.Access-Control-Allow-Headers" = "'Content-Type,Authorization'"
+    "method.response.header.Access-Control-Allow-Methods" = "'OPTIONS,GET,DELETE'"
+    "method.response.header.Access-Control-Allow-Origin"  = "'*'"
+  }
+}
+
+# PUT /users/{username}/groups
+
+resource "aws_api_gateway_method" "users_username_groups_put" {
+  rest_api_id   = aws_api_gateway_rest_api.acro_hub.id
+  resource_id   = aws_api_gateway_resource.users_username_groups.id
+  http_method   = "PUT"
+  authorization = "COGNITO_USER_POOLS"
+  authorizer_id = aws_api_gateway_authorizer.cognito.id
+}
+
+resource "aws_api_gateway_integration" "users_username_groups_put" {
+  rest_api_id             = aws_api_gateway_rest_api.acro_hub.id
+  resource_id             = aws_api_gateway_resource.users_username_groups.id
+  http_method             = aws_api_gateway_method.users_username_groups_put.http_method
+  integration_http_method = "POST"
+  type                    = "AWS_PROXY"
+  uri                     = "arn:aws:apigateway:${var.aws_region}:lambda:path/2015-03-31/functions/${aws_lambda_function.users.arn}/invocations"
+}
+
+# OPTIONS /users/{username}/groups (CORS)
+
+resource "aws_api_gateway_method" "users_username_groups_options" {
+  rest_api_id   = aws_api_gateway_rest_api.acro_hub.id
+  resource_id   = aws_api_gateway_resource.users_username_groups.id
+  http_method   = "OPTIONS"
+  authorization = "NONE"
+}
+
+resource "aws_api_gateway_integration" "users_username_groups_options" {
+  rest_api_id = aws_api_gateway_rest_api.acro_hub.id
+  resource_id = aws_api_gateway_resource.users_username_groups.id
+  http_method = aws_api_gateway_method.users_username_groups_options.http_method
+  type        = "MOCK"
+  request_templates = {
+    "application/json" = "{\"statusCode\": 200}"
+  }
+}
+
+resource "aws_api_gateway_method_response" "users_username_groups_options_200" {
+  rest_api_id = aws_api_gateway_rest_api.acro_hub.id
+  resource_id = aws_api_gateway_resource.users_username_groups.id
+  http_method = aws_api_gateway_method.users_username_groups_options.http_method
+  status_code = "200"
+
+  response_parameters = {
+    "method.response.header.Access-Control-Allow-Headers" = true
+    "method.response.header.Access-Control-Allow-Methods" = true
+    "method.response.header.Access-Control-Allow-Origin"  = true
+  }
+}
+
+resource "aws_api_gateway_integration_response" "users_username_groups_options" {
+  rest_api_id = aws_api_gateway_rest_api.acro_hub.id
+  resource_id = aws_api_gateway_resource.users_username_groups.id
+  http_method = aws_api_gateway_method.users_username_groups_options.http_method
+  status_code = aws_api_gateway_method_response.users_username_groups_options_200.status_code
+
+  depends_on = [aws_api_gateway_integration.users_username_groups_options]
+
+  response_parameters = {
+    "method.response.header.Access-Control-Allow-Headers" = "'Content-Type,Authorization'"
+    "method.response.header.Access-Control-Allow-Methods" = "'OPTIONS,PUT'"
+    "method.response.header.Access-Control-Allow-Origin"  = "'*'"
+  }
+}
+
+# POST /users/{username}/disable
+
+resource "aws_api_gateway_method" "users_username_disable_post" {
+  rest_api_id   = aws_api_gateway_rest_api.acro_hub.id
+  resource_id   = aws_api_gateway_resource.users_username_disable.id
+  http_method   = "POST"
+  authorization = "COGNITO_USER_POOLS"
+  authorizer_id = aws_api_gateway_authorizer.cognito.id
+}
+
+resource "aws_api_gateway_integration" "users_username_disable_post" {
+  rest_api_id             = aws_api_gateway_rest_api.acro_hub.id
+  resource_id             = aws_api_gateway_resource.users_username_disable.id
+  http_method             = aws_api_gateway_method.users_username_disable_post.http_method
+  integration_http_method = "POST"
+  type                    = "AWS_PROXY"
+  uri                     = "arn:aws:apigateway:${var.aws_region}:lambda:path/2015-03-31/functions/${aws_lambda_function.users.arn}/invocations"
+}
+
+# OPTIONS /users/{username}/disable (CORS)
+
+resource "aws_api_gateway_method" "users_username_disable_options" {
+  rest_api_id   = aws_api_gateway_rest_api.acro_hub.id
+  resource_id   = aws_api_gateway_resource.users_username_disable.id
+  http_method   = "OPTIONS"
+  authorization = "NONE"
+}
+
+resource "aws_api_gateway_integration" "users_username_disable_options" {
+  rest_api_id = aws_api_gateway_rest_api.acro_hub.id
+  resource_id = aws_api_gateway_resource.users_username_disable.id
+  http_method = aws_api_gateway_method.users_username_disable_options.http_method
+  type        = "MOCK"
+  request_templates = {
+    "application/json" = "{\"statusCode\": 200}"
+  }
+}
+
+resource "aws_api_gateway_method_response" "users_username_disable_options_200" {
+  rest_api_id = aws_api_gateway_rest_api.acro_hub.id
+  resource_id = aws_api_gateway_resource.users_username_disable.id
+  http_method = aws_api_gateway_method.users_username_disable_options.http_method
+  status_code = "200"
+
+  response_parameters = {
+    "method.response.header.Access-Control-Allow-Headers" = true
+    "method.response.header.Access-Control-Allow-Methods" = true
+    "method.response.header.Access-Control-Allow-Origin"  = true
+  }
+}
+
+resource "aws_api_gateway_integration_response" "users_username_disable_options" {
+  rest_api_id = aws_api_gateway_rest_api.acro_hub.id
+  resource_id = aws_api_gateway_resource.users_username_disable.id
+  http_method = aws_api_gateway_method.users_username_disable_options.http_method
+  status_code = aws_api_gateway_method_response.users_username_disable_options_200.status_code
+
+  depends_on = [aws_api_gateway_integration.users_username_disable_options]
+
+  response_parameters = {
+    "method.response.header.Access-Control-Allow-Headers" = "'Content-Type,Authorization'"
+    "method.response.header.Access-Control-Allow-Methods" = "'OPTIONS,POST'"
+    "method.response.header.Access-Control-Allow-Origin"  = "'*'"
+  }
+}
+
+# POST /users/{username}/enable
+
+resource "aws_api_gateway_method" "users_username_enable_post" {
+  rest_api_id   = aws_api_gateway_rest_api.acro_hub.id
+  resource_id   = aws_api_gateway_resource.users_username_enable.id
+  http_method   = "POST"
+  authorization = "COGNITO_USER_POOLS"
+  authorizer_id = aws_api_gateway_authorizer.cognito.id
+}
+
+resource "aws_api_gateway_integration" "users_username_enable_post" {
+  rest_api_id             = aws_api_gateway_rest_api.acro_hub.id
+  resource_id             = aws_api_gateway_resource.users_username_enable.id
+  http_method             = aws_api_gateway_method.users_username_enable_post.http_method
+  integration_http_method = "POST"
+  type                    = "AWS_PROXY"
+  uri                     = "arn:aws:apigateway:${var.aws_region}:lambda:path/2015-03-31/functions/${aws_lambda_function.users.arn}/invocations"
+}
+
+# OPTIONS /users/{username}/enable (CORS)
+
+resource "aws_api_gateway_method" "users_username_enable_options" {
+  rest_api_id   = aws_api_gateway_rest_api.acro_hub.id
+  resource_id   = aws_api_gateway_resource.users_username_enable.id
+  http_method   = "OPTIONS"
+  authorization = "NONE"
+}
+
+resource "aws_api_gateway_integration" "users_username_enable_options" {
+  rest_api_id = aws_api_gateway_rest_api.acro_hub.id
+  resource_id = aws_api_gateway_resource.users_username_enable.id
+  http_method = aws_api_gateway_method.users_username_enable_options.http_method
+  type        = "MOCK"
+  request_templates = {
+    "application/json" = "{\"statusCode\": 200}"
+  }
+}
+
+resource "aws_api_gateway_method_response" "users_username_enable_options_200" {
+  rest_api_id = aws_api_gateway_rest_api.acro_hub.id
+  resource_id = aws_api_gateway_resource.users_username_enable.id
+  http_method = aws_api_gateway_method.users_username_enable_options.http_method
+  status_code = "200"
+
+  response_parameters = {
+    "method.response.header.Access-Control-Allow-Headers" = true
+    "method.response.header.Access-Control-Allow-Methods" = true
+    "method.response.header.Access-Control-Allow-Origin"  = true
+  }
+}
+
+resource "aws_api_gateway_integration_response" "users_username_enable_options" {
+  rest_api_id = aws_api_gateway_rest_api.acro_hub.id
+  resource_id = aws_api_gateway_resource.users_username_enable.id
+  http_method = aws_api_gateway_method.users_username_enable_options.http_method
+  status_code = aws_api_gateway_method_response.users_username_enable_options_200.status_code
+
+  depends_on = [aws_api_gateway_integration.users_username_enable_options]
+
+  response_parameters = {
+    "method.response.header.Access-Control-Allow-Headers" = "'Content-Type,Authorization'"
+    "method.response.header.Access-Control-Allow-Methods" = "'OPTIONS,POST'"
+    "method.response.header.Access-Control-Allow-Origin"  = "'*'"
+  }
+}
+
 # ── Gateway Responses (CORS on auth errors) ───────────────────────────────────
 #
 # When API Gateway rejects a request at the authorizer level (missing/invalid
@@ -1110,6 +1499,12 @@ resource "aws_api_gateway_deployment" "acro_hub" {
       aws_api_gateway_method.videos_upload_post,
       aws_api_gateway_method.events_get,
       aws_api_gateway_method.events_post,
+      aws_api_gateway_method.users_get,
+      aws_api_gateway_method.users_username_get,
+      aws_api_gateway_method.users_username_delete,
+      aws_api_gateway_method.users_username_groups_put,
+      aws_api_gateway_method.users_username_disable_post,
+      aws_api_gateway_method.users_username_enable_post,
       aws_api_gateway_gateway_response.unauthorized,
       aws_api_gateway_gateway_response.access_denied,
     ]))
