@@ -49,6 +49,18 @@ resource "aws_cognito_user_pool" "acro_hub" {
     }
   }
 
+  schema {
+    name                = "last_login"
+    attribute_data_type = "String"
+    required            = false
+    mutable             = true
+
+    string_attribute_constraints {
+      min_length = 0
+      max_length = 32
+    }
+  }
+
   account_recovery_setting {
     recovery_mechanism {
       name     = "verified_email"

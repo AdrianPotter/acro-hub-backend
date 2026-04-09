@@ -60,6 +60,7 @@ resource "aws_iam_role_policy" "auth_lambda_cognito" {
           "cognito-idp:GlobalSignOut",
           "cognito-idp:ForgotPassword",
           "cognito-idp:ConfirmForgotPassword",
+          "cognito-idp:AdminUpdateUserAttributes",
         ]
         Resource = aws_cognito_user_pool.acro_hub.arn
       }
