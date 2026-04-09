@@ -4,7 +4,7 @@
 Write-Host "Packaging Lambda functions for AWS deployment..." -ForegroundColor Cyan
 Write-Host ""
 
-$services = @("auth", "moves", "videos", "events", "users")
+$services = @("auth", "moves", "videos", "events", "users", "user-move-lists")
 $baseDir = $PSScriptRoot
 
 foreach ($svc in $services) {
