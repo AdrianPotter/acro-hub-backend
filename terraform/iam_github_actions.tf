@@ -99,8 +99,10 @@ resource "aws_iam_policy" "github_actions_deploy" {
         Action = [
           "iam:AttachRolePolicy",
           "iam:CreatePolicy",
+          "iam:CreatePolicyVersion",
           "iam:CreateRole",
           "iam:DeletePolicy",
+          "iam:DeletePolicyVersion",
           "iam:DeleteRole",
           "iam:DeleteRolePolicy",
           "iam:DetachRolePolicy",
