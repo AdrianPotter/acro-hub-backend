@@ -19,6 +19,33 @@ resource "aws_dynamodb_table" "moves" {
   }
 }
 
+# ── User Move Lists Table ─────────────────────────────────────────────────────
+
+resource "aws_dynamodb_table" "user_move_lists" {
+  name         = "${var.app_name}-user-move-lists-${var.environment}"
+  billing_mode = "PAY_PER_REQUEST"
+  hash_key     = "userId"
+  range_key    = "listType#moveId"
+
+  attribute {
+    name = "userId"
+    type = "S"
+  }
+
+  attribute {
+    name = "listType#moveId"
+    type = "S"
+  }
+
+  point_in_time_recovery {
+    enabled = true
+  }
+
+  tags = {
+    Name = "${var.app_name}-user-move-lists-${var.environment}"
+  }
+}
+
 # ── Events Table ──────────────────────────────────────────────────────────────
 
 resource "aws_dynamodb_table" "events" {

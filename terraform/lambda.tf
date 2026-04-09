@@ -20,6 +20,10 @@ data "local_file" "users_zip_check" {
   filename = "${path.module}/../lambdas/users/function.zip"
 }
 
+data "local_file" "user_move_lists_zip_check" {
+  filename = "${path.module}/../lambdas/user-move-lists/function.zip"
+}
+
 # ── Shared Lambda assume-role policy ─────────────────────────────────────────
 
 data "aws_iam_policy_document" "lambda_assume_role" {
@@ -314,4 +318,57 @@ resource "aws_lambda_function" "users" {
   }
 
   depends_on = [aws_cloudwatch_log_group.users_lambda]
+}
+
+# ── User Move Lists Lambda ────────────────────────────────────────────────────
+
+resource "aws_iam_role" "user_move_lists_lambda" {
+  name               = "${var.app_name}-user-move-lists-lambda-${var.environment}"
+  assume_role_policy = data.aws_iam_policy_document.lambda_assume_role.json
+}
+
+resource "aws_iam_role_policy_attachment" "user_move_lists_lambda_basic" {
+  role       = aws_iam_role.user_move_lists_lambda.name
+  policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+}
+
+resource "aws_iam_role_policy" "user_move_lists_lambda_dynamodb" {
+  name = "${var.app_name}-user-move-lists-dynamodb-${var.environment}"
+  role = aws_iam_role.user_move_lists_lambda.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = [
+          "dynamodb:GetItem",
+          "dynamodb:PutItem",
+          "dynamodb:DeleteItem",
+          "dynamodb:Query",
+        ]
+        Resource = aws_dynamodb_table.user_move_lists.arn
+      }
+    ]
+  })
+}
+
+resource "aws_lambda_function" "user_move_lists" {
+  function_name = "${var.app_name}-user-move-lists-${var.environment}"
+  role          = aws_iam_role.user_move_lists_lambda.arn
+  filename      = "${path.module}/../lambdas/user-move-lists/function.zip"
+  handler       = "handler.router"
+  runtime       = "python3.14"
+  timeout       = 30
+  memory_size   = 256
+
+  source_code_hash = filebase64sha256("${path.module}/../lambdas/user-move-lists/function.zip")
+
+  environment {
+    variables = {
+      DYNAMODB_TABLE = aws_dynamodb_table.user_move_lists.name
+    }
+  }
+
+  depends_on = [aws_cloudwatch_log_group.user_move_lists_lambda]
 }

@@ -25,6 +25,11 @@ resource "aws_cloudwatch_log_group" "users_lambda" {
   retention_in_days = 7
 }
 
+resource "aws_cloudwatch_log_group" "user_move_lists_lambda" {
+  name              = "/aws/lambda/${var.app_name}-user-move-lists-${var.environment}"
+  retention_in_days = 7
+}
+
 resource "aws_cloudwatch_log_group" "api_gateway" {
   name              = "/aws/apigateway/${var.app_name}-${var.environment}"
   retention_in_days = 7
@@ -88,6 +93,7 @@ resource "aws_cloudwatch_dashboard" "acro_hub" {
             ["AWS/Lambda", "Invocations", "FunctionName", "${var.app_name}-videos-${var.environment}", { label = "videos" }],
             ["AWS/Lambda", "Invocations", "FunctionName", "${var.app_name}-events-${var.environment}", { label = "events" }],
             ["AWS/Lambda", "Invocations", "FunctionName", "${var.app_name}-users-${var.environment}", { label = "users" }],
+            ["AWS/Lambda", "Invocations", "FunctionName", "${var.app_name}-user-move-lists-${var.environment}", { label = "user-move-lists" }],
           ]
           view = "timeSeries"
         }
@@ -111,6 +117,7 @@ resource "aws_cloudwatch_dashboard" "acro_hub" {
             ["AWS/Lambda", "Errors", "FunctionName", "${var.app_name}-videos-${var.environment}", { label = "videos", color = "#9467bd" }],
             ["AWS/Lambda", "Errors", "FunctionName", "${var.app_name}-events-${var.environment}", { label = "events", color = "#8c564b" }],
             ["AWS/Lambda", "Errors", "FunctionName", "${var.app_name}-users-${var.environment}", { label = "users", color = "#e377c2" }],
+            ["AWS/Lambda", "Errors", "FunctionName", "${var.app_name}-user-move-lists-${var.environment}", { label = "user-move-lists", color = "#17becf" }],
           ]
           view = "timeSeries"
         }
@@ -171,6 +178,8 @@ resource "aws_cloudwatch_dashboard" "acro_hub" {
             ["AWS/DynamoDB", "ConsumedWriteCapacityUnits", "TableName", "${var.app_name}-moves-${var.environment}", { label = "moves writes" }],
             ["AWS/DynamoDB", "ConsumedReadCapacityUnits", "TableName", "${var.app_name}-events-${var.environment}", { label = "events reads" }],
             ["AWS/DynamoDB", "ConsumedWriteCapacityUnits", "TableName", "${var.app_name}-events-${var.environment}", { label = "events writes" }],
+            ["AWS/DynamoDB", "ConsumedReadCapacityUnits", "TableName", "${var.app_name}-user-move-lists-${var.environment}", { label = "user-move-lists reads" }],
+            ["AWS/DynamoDB", "ConsumedWriteCapacityUnits", "TableName", "${var.app_name}-user-move-lists-${var.environment}", { label = "user-move-lists writes" }],
           ]
           view = "timeSeries"
         }
@@ -182,7 +191,7 @@ resource "aws_cloudwatch_dashboard" "acro_hub" {
 # ── Lambda Error Alarms ───────────────────────────────────────────────────────
 
 locals {
-  lambda_functions = ["auth", "moves", "videos", "events", "users"]
+  lambda_functions = ["auth", "moves", "videos", "events", "users", "user-move-lists"]
 }
 
 resource "aws_cloudwatch_metric_alarm" "lambda_errors" {
