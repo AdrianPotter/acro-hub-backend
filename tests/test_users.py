@@ -61,14 +61,17 @@ def _client_error(code: str, message: str = "error"):
     return ClientError({"Error": {"Code": code, "Message": message}}, "operation")
 
 
-def _make_cognito_user(username="user@example.com", enabled=True, status="CONFIRMED"):
+def _make_cognito_user(username="user@example.com", enabled=True, status="CONFIRMED", last_login=None):
+    attrs = [
+        {"Name": "email", "Value": username},
+        {"Name": "name", "Value": "Test User"},
+        {"Name": "sub", "Value": "sub-123"},
+    ]
+    if last_login is not None:
+        attrs.append({"Name": "custom:last_login", "Value": last_login})
     return {
         "Username": username,
-        "Attributes": [
-            {"Name": "email", "Value": username},
-            {"Name": "name", "Value": "Test User"},
-            {"Name": "sub", "Value": "sub-123"},
-        ],
+        "Attributes": attrs,
         "UserStatus": status,
         "Enabled": enabled,
         "UserCreateDate": datetime(2024, 1, 15, 10, 0, 0, tzinfo=timezone.utc),
@@ -102,6 +105,20 @@ class TestRequireAdmin(unittest.TestCase):
         self.assertIsNone(result)
 
 
+# ── _format_user ──────────────────────────────────────────────────────────────
+
+class TestFormatUser(unittest.TestCase):
+    def test_last_login_absent_when_attribute_missing(self):
+        user = _make_cognito_user("bob@example.com")
+        result = users_handler._format_user(user, [])
+        self.assertIsNone(result["lastLogin"])
+
+    def test_last_login_present_when_attribute_set(self):
+        user = _make_cognito_user("bob@example.com", last_login="2026-04-09T10:30:00Z")
+        result = users_handler._format_user(user, [])
+        self.assertEqual(result["lastLogin"], "2026-04-09T10:30:00Z")
+
+
 # ── list_users ────────────────────────────────────────────────────────────────
 
 class TestListUsers(unittest.TestCase):
@@ -127,6 +144,23 @@ class TestListUsers(unittest.TestCase):
         self.assertEqual(body["count"], 1)
         self.assertEqual(body["users"][0]["email"], "alice@example.com")
         self.assertEqual(body["users"][0]["groups"], ["contributors"])
+        self.assertIsNone(body["users"][0]["lastLogin"])
+
+    @patch("boto3.client")
+    def test_list_users_last_login_populated(self, mock_boto_client):
+        mock_cognito = MagicMock()
+        mock_boto_client.return_value = mock_cognito
+        mock_cognito.list_users.return_value = {
+            "Users": [_make_cognito_user("alice@example.com", last_login="2026-04-09T12:00:00Z")],
+        }
+        mock_cognito.admin_list_groups_for_user.return_value = {"Groups": []}
+
+        event = _admin_event()
+        resp = users_handler.list_users(event, None)
+
+        self.assertEqual(resp["statusCode"], 200)
+        body = json.loads(resp["body"])
+        self.assertEqual(body["users"][0]["lastLogin"], "2026-04-09T12:00:00Z")
 
     @patch("boto3.client")
     def test_list_users_pagination(self, mock_boto_client):

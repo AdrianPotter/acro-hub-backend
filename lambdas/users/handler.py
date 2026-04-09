@@ -115,6 +115,7 @@ def _format_user(user: dict, groups: list | None = None) -> dict:
         "createdAt": user.get("UserCreateDate", "").isoformat()
         if hasattr(user.get("UserCreateDate", ""), "isoformat")
         else str(user.get("UserCreateDate", "")),
+        "lastLogin": attrs.get("custom:last_login", None),
         "groups": groups if groups is not None else [],
     }
 

@@ -387,6 +387,13 @@ components:
           format: date-time
           readOnly: true
           description: When the Cognito account was created
+        lastLogin:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+          description: Timestamp of the user's most recent successful login (null if never logged in)
+          example: "2026-04-09T15:00:00Z"
         groups:
           type: array
           items:

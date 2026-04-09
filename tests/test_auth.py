@@ -80,6 +80,12 @@ class TestLogin(unittest.TestCase):
         self.assertEqual(body["accessToken"], "access-tok")
         self.assertEqual(body["idToken"], "id-tok")
         mock_cognito.initiate_auth.assert_called_once()
+        # last_login should be stamped after a successful login
+        mock_cognito.admin_update_user_attributes.assert_called_once()
+        call_kwargs = mock_cognito.admin_update_user_attributes.call_args[1]
+        self.assertEqual(call_kwargs["Username"], "user@example.com")
+        attrs = {a["Name"]: a["Value"] for a in call_kwargs["UserAttributes"]}
+        self.assertIn("custom:last_login", attrs)
 
     @patch("boto3.client")
     def test_login_user_not_found(self, mock_boto_client):
@@ -122,6 +128,30 @@ class TestLogin(unittest.TestCase):
         event = {"body": "not-json"}
         resp = auth_handler.login(event, None)
         self.assertEqual(resp["statusCode"], 400)
+
+    @patch("boto3.client")
+    def test_login_stamp_fails_gracefully(self, mock_boto_client):
+        """A failure to stamp last_login must not affect the login response."""
+        mock_cognito = MagicMock()
+        mock_boto_client.return_value = mock_cognito
+        mock_cognito.initiate_auth.return_value = {
+            "AuthenticationResult": {
+                "AccessToken": "access-tok",
+                "IdToken": "id-tok",
+                "RefreshToken": "refresh-tok",
+                "ExpiresIn": 3600,
+                "TokenType": "Bearer",
+            }
+        }
+        mock_cognito.admin_update_user_attributes.side_effect = _client_error(
+            "InternalErrorException"
+        )
+
+        resp = auth_handler.login(_login_event(), None)
+
+        self.assertEqual(resp["statusCode"], 200)
+        body = json.loads(resp["body"])
+        self.assertEqual(body["accessToken"], "access-tok")
 
 
 # ── Logout tests ──────────────────────────────────────────────────────────────

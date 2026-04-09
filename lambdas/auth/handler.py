@@ -5,6 +5,7 @@ Handles login, logout, registration and password reset via Amazon Cognito.
 import json
 import logging
 import os
+from datetime import datetime, timezone
 
 import boto3
 from botocore.exceptions import ClientError
@@ -70,6 +71,27 @@ def _log_response(response: dict) -> dict:
 
 # ── Handlers ─────────────────────────────────────────────────────────────────
 
+def _stamp_last_login(email: str) -> None:
+    """Best-effort update of custom:last_login for the given user.
+
+    Errors are logged but never propagate — a stamping failure must not
+    prevent a successful login response from reaching the client.
+    """
+    timestamp = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+    client = _get_client()
+    try:
+        client.admin_update_user_attributes(
+            UserPoolId=COGNITO_USER_POOL_ID,
+            Username=email,
+            UserAttributes=[{"Name": "custom:last_login", "Value": timestamp}],
+        )
+        logger.info("_stamp_last_login: updated last_login for email=%s", email)
+    except ClientError as exc:
+        logger.warning(
+            "_stamp_last_login: failed to update last_login for email=%s — %s", email, exc
+        )
+
+
 def login(event, context):
     """POST /auth/login — authenticate with email + password."""
     logger.info("login called")
@@ -106,6 +128,9 @@ def login(event, context):
 
     logger.info("login: successful for email=%s", email)
     auth_result = response.get("AuthenticationResult", {})
+
+    _stamp_last_login(email)
+
     return _log_response(
         _ok(
             {
