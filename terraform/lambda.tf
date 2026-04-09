@@ -118,6 +118,19 @@ resource "aws_iam_role_policy" "moves_lambda_dynamodb" {
           "dynamodb:Query",
         ]
         Resource = aws_dynamodb_table.moves.arn
+      },
+      {
+        Effect = "Allow"
+        Action = [
+          "dynamodb:GetItem",
+          "dynamodb:PutItem",
+          "dynamodb:DeleteItem",
+          "dynamodb:Query",
+        ]
+        Resource = [
+          aws_dynamodb_table.move_edges.arn,
+          "${aws_dynamodb_table.move_edges.arn}/index/*",
+        ]
       }
     ]
   })
@@ -137,6 +150,7 @@ resource "aws_lambda_function" "moves" {
   environment {
     variables = {
       DYNAMODB_TABLE = aws_dynamodb_table.moves.name
+      EDGES_TABLE    = aws_dynamodb_table.move_edges.name
     }
   }
 

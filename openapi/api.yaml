@@ -271,6 +271,24 @@ components:
         count:
           type: integer
 
+    MoveEdge:
+      type: object
+      properties:
+        fromMoveId:
+          type: string
+          format: uuid
+          description: The prerequisite move (must be completed first)
+          readOnly: true
+        toMoveId:
+          type: string
+          format: uuid
+          description: The move that requires the prerequisite
+          readOnly: true
+        createdAt:
+          type: string
+          format: date-time
+          readOnly: true
+
     # ── Video ─────────────────────────────────────────────────────────────────
     VideoUrlResponse:
       type: object
@@ -801,6 +819,171 @@ paths:
                 $ref: "#/components/schemas/ErrorResponse"
         "404":
           description: Move not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /moves/{moveId}/prerequisites:
+    parameters:
+      - in: path
+        name: moveId
+        required: true
+        schema:
+          type: string
+        description: Move ID whose prerequisites are requested
+
+    get:
+      summary: Get the direct prerequisite moves for a given move
+      operationId: getMovePrerequisites
+      tags: [Moves]
+      security:
+        - CognitoAuth: []
+      responses:
+        "200":
+          description: List of prerequisite moves
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MovesListResponse"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Move not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /moves/{moveId}/next:
+    parameters:
+      - in: path
+        name: moveId
+        required: true
+        schema:
+          type: string
+        description: Move ID whose successors are requested
+
+    get:
+      summary: Get moves that can be done after the given move
+      operationId: getMoveNext
+      tags: [Moves]
+      security:
+        - CognitoAuth: []
+      responses:
+        "200":
+          description: List of successor moves
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MovesListResponse"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Move not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /moves/{fromMoveId}/next/{toMoveId}:
+    parameters:
+      - in: path
+        name: fromMoveId
+        required: true
+        schema:
+          type: string
+        description: The prerequisite move (the source of the directed edge)
+      - in: path
+        name: toMoveId
+        required: true
+        schema:
+          type: string
+        description: The successor move (the destination of the directed edge)
+
+    put:
+      summary: Add a directed edge between two moves (curators/admins only)
+      description: >
+        Creates a prerequisite relationship: fromMoveId must be learned before
+        toMoveId.  The server runs cycle detection before writing the edge and
+        rejects any edge that would introduce a cycle.
+      operationId: putMoveEdge
+      tags: [Moves]
+      security:
+        - CognitoAuth: []
+      responses:
+        "201":
+          description: Edge created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MoveEdge"
+        "400":
+          description: Missing path parameters
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Curators or admins only
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: One or both moves not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "409":
+          description: Edge would create a cycle
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+    delete:
+      summary: Remove a directed edge between two moves (curators/admins only)
+      operationId: deleteMoveEdge
+      tags: [Moves]
+      security:
+        - CognitoAuth: []
+      responses:
+        "200":
+          description: Edge removed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MessageResponse"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Curators or admins only
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Edge not found
           content:
             application/json:
               schema:

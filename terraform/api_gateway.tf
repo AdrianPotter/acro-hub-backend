@@ -797,6 +797,247 @@ resource "aws_api_gateway_integration_response" "moves_id_options" {
   }
 }
 
+# ── /moves/{id}/prerequisites resource ───────────────────────────────────────
+
+resource "aws_api_gateway_resource" "moves_id_prerequisites" {
+  rest_api_id = aws_api_gateway_rest_api.acro_hub.id
+  parent_id   = aws_api_gateway_resource.moves_id.id
+  path_part   = "prerequisites"
+}
+
+# GET /moves/{id}/prerequisites
+
+resource "aws_api_gateway_method" "moves_id_prerequisites_get" {
+  rest_api_id   = aws_api_gateway_rest_api.acro_hub.id
+  resource_id   = aws_api_gateway_resource.moves_id_prerequisites.id
+  http_method   = "GET"
+  authorization = "COGNITO_USER_POOLS"
+  authorizer_id = aws_api_gateway_authorizer.cognito.id
+}
+
+resource "aws_api_gateway_integration" "moves_id_prerequisites_get" {
+  rest_api_id             = aws_api_gateway_rest_api.acro_hub.id
+  resource_id             = aws_api_gateway_resource.moves_id_prerequisites.id
+  http_method             = aws_api_gateway_method.moves_id_prerequisites_get.http_method
+  integration_http_method = "POST"
+  type                    = "AWS_PROXY"
+  uri                     = "arn:aws:apigateway:${var.aws_region}:lambda:path/2015-03-31/functions/${aws_lambda_function.moves.arn}/invocations"
+}
+
+# OPTIONS /moves/{id}/prerequisites (CORS)
+
+resource "aws_api_gateway_method" "moves_id_prerequisites_options" {
+  rest_api_id   = aws_api_gateway_rest_api.acro_hub.id
+  resource_id   = aws_api_gateway_resource.moves_id_prerequisites.id
+  http_method   = "OPTIONS"
+  authorization = "NONE"
+}
+
+resource "aws_api_gateway_integration" "moves_id_prerequisites_options" {
+  rest_api_id = aws_api_gateway_rest_api.acro_hub.id
+  resource_id = aws_api_gateway_resource.moves_id_prerequisites.id
+  http_method = aws_api_gateway_method.moves_id_prerequisites_options.http_method
+  type        = "MOCK"
+  request_templates = {
+    "application/json" = "{\"statusCode\": 200}"
+  }
+}
+
+resource "aws_api_gateway_method_response" "moves_id_prerequisites_options_200" {
+  rest_api_id = aws_api_gateway_rest_api.acro_hub.id
+  resource_id = aws_api_gateway_resource.moves_id_prerequisites.id
+  http_method = aws_api_gateway_method.moves_id_prerequisites_options.http_method
+  status_code = "200"
+
+  response_parameters = {
+    "method.response.header.Access-Control-Allow-Headers" = true
+    "method.response.header.Access-Control-Allow-Methods" = true
+    "method.response.header.Access-Control-Allow-Origin"  = true
+  }
+}
+
+resource "aws_api_gateway_integration_response" "moves_id_prerequisites_options" {
+  rest_api_id = aws_api_gateway_rest_api.acro_hub.id
+  resource_id = aws_api_gateway_resource.moves_id_prerequisites.id
+  http_method = aws_api_gateway_method.moves_id_prerequisites_options.http_method
+  status_code = aws_api_gateway_method_response.moves_id_prerequisites_options_200.status_code
+
+  depends_on = [aws_api_gateway_integration.moves_id_prerequisites_options]
+
+  response_parameters = {
+    "method.response.header.Access-Control-Allow-Headers" = "'Content-Type,Authorization'"
+    "method.response.header.Access-Control-Allow-Methods" = "'OPTIONS,GET'"
+    "method.response.header.Access-Control-Allow-Origin"  = "'*'"
+  }
+}
+
+# ── /moves/{id}/next resource ─────────────────────────────────────────────────
+
+resource "aws_api_gateway_resource" "moves_id_next" {
+  rest_api_id = aws_api_gateway_rest_api.acro_hub.id
+  parent_id   = aws_api_gateway_resource.moves_id.id
+  path_part   = "next"
+}
+
+# GET /moves/{id}/next
+
+resource "aws_api_gateway_method" "moves_id_next_get" {
+  rest_api_id   = aws_api_gateway_rest_api.acro_hub.id
+  resource_id   = aws_api_gateway_resource.moves_id_next.id
+  http_method   = "GET"
+  authorization = "COGNITO_USER_POOLS"
+  authorizer_id = aws_api_gateway_authorizer.cognito.id
+}
+
+resource "aws_api_gateway_integration" "moves_id_next_get" {
+  rest_api_id             = aws_api_gateway_rest_api.acro_hub.id
+  resource_id             = aws_api_gateway_resource.moves_id_next.id
+  http_method             = aws_api_gateway_method.moves_id_next_get.http_method
+  integration_http_method = "POST"
+  type                    = "AWS_PROXY"
+  uri                     = "arn:aws:apigateway:${var.aws_region}:lambda:path/2015-03-31/functions/${aws_lambda_function.moves.arn}/invocations"
+}
+
+# OPTIONS /moves/{id}/next (CORS)
+
+resource "aws_api_gateway_method" "moves_id_next_options" {
+  rest_api_id   = aws_api_gateway_rest_api.acro_hub.id
+  resource_id   = aws_api_gateway_resource.moves_id_next.id
+  http_method   = "OPTIONS"
+  authorization = "NONE"
+}
+
+resource "aws_api_gateway_integration" "moves_id_next_options" {
+  rest_api_id = aws_api_gateway_rest_api.acro_hub.id
+  resource_id = aws_api_gateway_resource.moves_id_next.id
+  http_method = aws_api_gateway_method.moves_id_next_options.http_method
+  type        = "MOCK"
+  request_templates = {
+    "application/json" = "{\"statusCode\": 200}"
+  }
+}
+
+resource "aws_api_gateway_method_response" "moves_id_next_options_200" {
+  rest_api_id = aws_api_gateway_rest_api.acro_hub.id
+  resource_id = aws_api_gateway_resource.moves_id_next.id
+  http_method = aws_api_gateway_method.moves_id_next_options.http_method
+  status_code = "200"
+
+  response_parameters = {
+    "method.response.header.Access-Control-Allow-Headers" = true
+    "method.response.header.Access-Control-Allow-Methods" = true
+    "method.response.header.Access-Control-Allow-Origin"  = true
+  }
+}
+
+resource "aws_api_gateway_integration_response" "moves_id_next_options" {
+  rest_api_id = aws_api_gateway_rest_api.acro_hub.id
+  resource_id = aws_api_gateway_resource.moves_id_next.id
+  http_method = aws_api_gateway_method.moves_id_next_options.http_method
+  status_code = aws_api_gateway_method_response.moves_id_next_options_200.status_code
+
+  depends_on = [aws_api_gateway_integration.moves_id_next_options]
+
+  response_parameters = {
+    "method.response.header.Access-Control-Allow-Headers" = "'Content-Type,Authorization'"
+    "method.response.header.Access-Control-Allow-Methods" = "'OPTIONS,GET'"
+    "method.response.header.Access-Control-Allow-Origin"  = "'*'"
+  }
+}
+
+# ── /moves/{id}/next/{toId} resource ─────────────────────────────────────────
+
+resource "aws_api_gateway_resource" "moves_id_next_toid" {
+  rest_api_id = aws_api_gateway_rest_api.acro_hub.id
+  parent_id   = aws_api_gateway_resource.moves_id_next.id
+  path_part   = "{toId}"
+}
+
+# PUT /moves/{id}/next/{toId}
+
+resource "aws_api_gateway_method" "moves_id_next_toid_put" {
+  rest_api_id   = aws_api_gateway_rest_api.acro_hub.id
+  resource_id   = aws_api_gateway_resource.moves_id_next_toid.id
+  http_method   = "PUT"
+  authorization = "COGNITO_USER_POOLS"
+  authorizer_id = aws_api_gateway_authorizer.cognito.id
+}
+
+resource "aws_api_gateway_integration" "moves_id_next_toid_put" {
+  rest_api_id             = aws_api_gateway_rest_api.acro_hub.id
+  resource_id             = aws_api_gateway_resource.moves_id_next_toid.id
+  http_method             = aws_api_gateway_method.moves_id_next_toid_put.http_method
+  integration_http_method = "POST"
+  type                    = "AWS_PROXY"
+  uri                     = "arn:aws:apigateway:${var.aws_region}:lambda:path/2015-03-31/functions/${aws_lambda_function.moves.arn}/invocations"
+}
+
+# DELETE /moves/{id}/next/{toId}
+
+resource "aws_api_gateway_method" "moves_id_next_toid_delete" {
+  rest_api_id   = aws_api_gateway_rest_api.acro_hub.id
+  resource_id   = aws_api_gateway_resource.moves_id_next_toid.id
+  http_method   = "DELETE"
+  authorization = "COGNITO_USER_POOLS"
+  authorizer_id = aws_api_gateway_authorizer.cognito.id
+}
+
+resource "aws_api_gateway_integration" "moves_id_next_toid_delete" {
+  rest_api_id             = aws_api_gateway_rest_api.acro_hub.id
+  resource_id             = aws_api_gateway_resource.moves_id_next_toid.id
+  http_method             = aws_api_gateway_method.moves_id_next_toid_delete.http_method
+  integration_http_method = "POST"
+  type                    = "AWS_PROXY"
+  uri                     = "arn:aws:apigateway:${var.aws_region}:lambda:path/2015-03-31/functions/${aws_lambda_function.moves.arn}/invocations"
+}
+
+# OPTIONS /moves/{id}/next/{toId} (CORS)
+
+resource "aws_api_gateway_method" "moves_id_next_toid_options" {
+  rest_api_id   = aws_api_gateway_rest_api.acro_hub.id
+  resource_id   = aws_api_gateway_resource.moves_id_next_toid.id
+  http_method   = "OPTIONS"
+  authorization = "NONE"
+}
+
+resource "aws_api_gateway_integration" "moves_id_next_toid_options" {
+  rest_api_id = aws_api_gateway_rest_api.acro_hub.id
+  resource_id = aws_api_gateway_resource.moves_id_next_toid.id
+  http_method = aws_api_gateway_method.moves_id_next_toid_options.http_method
+  type        = "MOCK"
+  request_templates = {
+    "application/json" = "{\"statusCode\": 200}"
+  }
+}
+
+resource "aws_api_gateway_method_response" "moves_id_next_toid_options_200" {
+  rest_api_id = aws_api_gateway_rest_api.acro_hub.id
+  resource_id = aws_api_gateway_resource.moves_id_next_toid.id
+  http_method = aws_api_gateway_method.moves_id_next_toid_options.http_method
+  status_code = "200"
+
+  response_parameters = {
+    "method.response.header.Access-Control-Allow-Headers" = true
+    "method.response.header.Access-Control-Allow-Methods" = true
+    "method.response.header.Access-Control-Allow-Origin"  = true
+  }
+}
+
+resource "aws_api_gateway_integration_response" "moves_id_next_toid_options" {
+  rest_api_id = aws_api_gateway_rest_api.acro_hub.id
+  resource_id = aws_api_gateway_resource.moves_id_next_toid.id
+  http_method = aws_api_gateway_method.moves_id_next_toid_options.http_method
+  status_code = aws_api_gateway_method_response.moves_id_next_toid_options_200.status_code
+
+  depends_on = [aws_api_gateway_integration.moves_id_next_toid_options]
+
+  response_parameters = {
+    "method.response.header.Access-Control-Allow-Headers" = "'Content-Type,Authorization'"
+    "method.response.header.Access-Control-Allow-Methods" = "'OPTIONS,PUT,DELETE'"
+    "method.response.header.Access-Control-Allow-Origin"  = "'*'"
+  }
+}
+
 # ── /videos resource ──────────────────────────────────────────────────────────
 
 resource "aws_api_gateway_resource" "videos" {
@@ -1495,6 +1736,10 @@ resource "aws_api_gateway_deployment" "acro_hub" {
       aws_api_gateway_method.moves_id_put,
       aws_api_gateway_method.moves_id_patch,
       aws_api_gateway_method.moves_id_delete,
+      aws_api_gateway_method.moves_id_prerequisites_get,
+      aws_api_gateway_method.moves_id_next_get,
+      aws_api_gateway_method.moves_id_next_toid_put,
+      aws_api_gateway_method.moves_id_next_toid_delete,
       aws_api_gateway_method.videos_url_get,
       aws_api_gateway_method.videos_upload_post,
       aws_api_gateway_method.events_get,

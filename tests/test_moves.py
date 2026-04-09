@@ -477,5 +477,354 @@ class TestMovesLogging(unittest.TestCase):
         self.assertIn("Returning status 200", messages)
 
 
+# ── Edge helpers ──────────────────────────────────────────────────────────────
+
+def _edge_event(from_id: str, to_id: str = None, groups: list[str] | None = None):
+    """Build an event for edge operations."""
+    params = {"id": from_id}
+    if to_id is not None:
+        params["toId"] = to_id
+    event = {"pathParameters": params, "body": "{}"}
+    if groups is not None:
+        event.update(_claims_context(groups))
+    return event
+
+
+SAMPLE_EDGE = {
+    "fromMoveId": "move-a",
+    "toMoveId": "move-b",
+    "createdAt": "2024-01-01T00:00:00+00:00",
+}
+
+SAMPLE_MOVE_B = {**SAMPLE_MOVE, "moveId": "move-b", "name": "Throne"}
+SAMPLE_MOVE_A = {**SAMPLE_MOVE, "moveId": "move-a"}
+
+
+# ── get_prerequisites ─────────────────────────────────────────────────────────
+
+class TestGetPrerequisites(unittest.TestCase):
+    def setUp(self):
+        moves_handler._table = None
+        moves_handler._dynamodb = None
+        moves_handler._edges_table = None
+
+    @patch("boto3.resource")
+    def test_get_prerequisites_success(self, mock_resource):
+        mock_moves = MagicMock()
+        mock_edges = MagicMock()
+        # Two Table() calls: first for moves, second for edges
+        mock_resource.return_value.Table.side_effect = [mock_moves, mock_edges]
+        mock_moves.get_item.side_effect = [
+            {"Item": SAMPLE_MOVE_B},  # verify target move exists
+            {"Item": SAMPLE_MOVE_A},  # fetch prerequisite move
+        ]
+        mock_edges.query.return_value = {"Items": [SAMPLE_EDGE]}
+
+        resp = moves_handler.get_prerequisites(_edge_event("move-b"), None)
+
+        self.assertEqual(resp["statusCode"], 200)
+        body = json.loads(resp["body"])
+        self.assertEqual(body["count"], 1)
+        self.assertEqual(body["moves"][0]["moveId"], "move-a")
+
+    @patch("boto3.resource")
+    def test_get_prerequisites_move_not_found(self, mock_resource):
+        mock_moves = MagicMock()
+        mock_edges = MagicMock()
+        mock_resource.return_value.Table.side_effect = [mock_moves, mock_edges]
+        mock_moves.get_item.return_value = {}
+
+        resp = moves_handler.get_prerequisites(_edge_event("ghost"), None)
+
+        self.assertEqual(resp["statusCode"], 404)
+
+    def test_get_prerequisites_missing_id(self):
+        resp = moves_handler.get_prerequisites({"pathParameters": None}, None)
+        self.assertEqual(resp["statusCode"], 400)
+
+    @patch("boto3.resource")
+    def test_get_prerequisites_no_edges(self, mock_resource):
+        mock_moves = MagicMock()
+        mock_edges = MagicMock()
+        mock_resource.return_value.Table.side_effect = [mock_moves, mock_edges]
+        mock_moves.get_item.return_value = {"Item": SAMPLE_MOVE}
+        mock_edges.query.return_value = {"Items": []}
+
+        resp = moves_handler.get_prerequisites(_edge_event("move-123"), None)
+
+        self.assertEqual(resp["statusCode"], 200)
+        body = json.loads(resp["body"])
+        self.assertEqual(body["count"], 0)
+
+
+# ── get_next ──────────────────────────────────────────────────────────────────
+
+class TestGetNext(unittest.TestCase):
+    def setUp(self):
+        moves_handler._table = None
+        moves_handler._dynamodb = None
+        moves_handler._edges_table = None
+
+    @patch("boto3.resource")
+    def test_get_next_success(self, mock_resource):
+        mock_moves = MagicMock()
+        mock_edges = MagicMock()
+        mock_resource.return_value.Table.side_effect = [mock_moves, mock_edges]
+        mock_moves.get_item.side_effect = [
+            {"Item": SAMPLE_MOVE_A},  # verify source move exists
+            {"Item": SAMPLE_MOVE_B},  # fetch successor move
+        ]
+        mock_edges.query.return_value = {"Items": [SAMPLE_EDGE]}
+
+        resp = moves_handler.get_next(_edge_event("move-a"), None)
+
+        self.assertEqual(resp["statusCode"], 200)
+        body = json.loads(resp["body"])
+        self.assertEqual(body["count"], 1)
+        self.assertEqual(body["moves"][0]["moveId"], "move-b")
+
+    @patch("boto3.resource")
+    def test_get_next_move_not_found(self, mock_resource):
+        mock_moves = MagicMock()
+        mock_edges = MagicMock()
+        mock_resource.return_value.Table.side_effect = [mock_moves, mock_edges]
+        mock_moves.get_item.return_value = {}
+
+        resp = moves_handler.get_next(_edge_event("ghost"), None)
+
+        self.assertEqual(resp["statusCode"], 404)
+
+    def test_get_next_missing_id(self):
+        resp = moves_handler.get_next({"pathParameters": None}, None)
+        self.assertEqual(resp["statusCode"], 400)
+
+    @patch("boto3.resource")
+    def test_get_next_no_edges(self, mock_resource):
+        mock_moves = MagicMock()
+        mock_edges = MagicMock()
+        mock_resource.return_value.Table.side_effect = [mock_moves, mock_edges]
+        mock_moves.get_item.return_value = {"Item": SAMPLE_MOVE}
+        mock_edges.query.return_value = {"Items": []}
+
+        resp = moves_handler.get_next(_edge_event("move-123"), None)
+
+        self.assertEqual(resp["statusCode"], 200)
+        body = json.loads(resp["body"])
+        self.assertEqual(body["count"], 0)
+
+
+# ── put_edge ──────────────────────────────────────────────────────────────────
+
+class TestPutEdge(unittest.TestCase):
+    def setUp(self):
+        moves_handler._table = None
+        moves_handler._dynamodb = None
+        moves_handler._edges_table = None
+
+    @patch("boto3.resource")
+    def test_put_edge_success(self, mock_resource):
+        mock_moves = MagicMock()
+        mock_edges = MagicMock()
+        mock_resource.return_value.Table.side_effect = [mock_moves, mock_edges]
+        mock_moves.get_item.side_effect = [
+            {"Item": SAMPLE_MOVE_A},
+            {"Item": SAMPLE_MOVE_B},
+        ]
+        # No outgoing edges from move-b (no cycle)
+        mock_edges.query.return_value = {"Items": []}
+        mock_edges.put_item.return_value = {}
+
+        resp = moves_handler.put_edge(_edge_event("move-a", "move-b", groups=["curators"]), None)
+
+        self.assertEqual(resp["statusCode"], 201)
+        body = json.loads(resp["body"])
+        self.assertEqual(body["fromMoveId"], "move-a")
+        self.assertEqual(body["toMoveId"], "move-b")
+        mock_edges.put_item.assert_called_once()
+
+    def test_put_edge_forbidden_no_group(self):
+        resp = moves_handler.put_edge(_edge_event("move-a", "move-b", groups=[]), None)
+        self.assertEqual(resp["statusCode"], 403)
+
+    def test_put_edge_forbidden_contributor(self):
+        resp = moves_handler.put_edge(_edge_event("move-a", "move-b", groups=["contributors"]), None)
+        self.assertEqual(resp["statusCode"], 403)
+
+    @patch("boto3.resource")
+    def test_put_edge_allowed_curator(self, mock_resource):
+        mock_moves = MagicMock()
+        mock_edges = MagicMock()
+        mock_resource.return_value.Table.side_effect = [mock_moves, mock_edges]
+        mock_moves.get_item.side_effect = [{"Item": SAMPLE_MOVE_A}, {"Item": SAMPLE_MOVE_B}]
+        mock_edges.query.return_value = {"Items": []}
+        mock_edges.put_item.return_value = {}
+        resp = moves_handler.put_edge(_edge_event("move-a", "move-b", groups=["curators"]), None)
+        self.assertEqual(resp["statusCode"], 201)
+
+    @patch("boto3.resource")
+    def test_put_edge_allowed_admin(self, mock_resource):
+        mock_moves = MagicMock()
+        mock_edges = MagicMock()
+        mock_resource.return_value.Table.side_effect = [mock_moves, mock_edges]
+        mock_moves.get_item.side_effect = [{"Item": SAMPLE_MOVE_A}, {"Item": SAMPLE_MOVE_B}]
+        mock_edges.query.return_value = {"Items": []}
+        mock_edges.put_item.return_value = {}
+        resp = moves_handler.put_edge(_edge_event("move-a", "move-b", groups=["admins"]), None)
+        self.assertEqual(resp["statusCode"], 201)
+
+    def test_put_edge_missing_params(self):
+        event = {"pathParameters": {"id": "move-a"}}
+        event.update(_claims_context(["curators"]))
+        resp = moves_handler.put_edge(event, None)
+        self.assertEqual(resp["statusCode"], 400)
+
+    def test_put_edge_missing_id(self):
+        event = {"pathParameters": None}
+        event.update(_claims_context(["curators"]))
+        resp = moves_handler.put_edge(event, None)
+        self.assertEqual(resp["statusCode"], 400)
+
+    @patch("boto3.resource")
+    def test_put_edge_from_move_not_found(self, mock_resource):
+        mock_moves = MagicMock()
+        mock_edges = MagicMock()
+        mock_resource.return_value.Table.side_effect = [mock_moves, mock_edges]
+        mock_moves.get_item.return_value = {}
+        resp = moves_handler.put_edge(_edge_event("ghost-a", "move-b", groups=["curators"]), None)
+        self.assertEqual(resp["statusCode"], 404)
+
+    @patch("boto3.resource")
+    def test_put_edge_to_move_not_found(self, mock_resource):
+        mock_moves = MagicMock()
+        mock_edges = MagicMock()
+        mock_resource.return_value.Table.side_effect = [mock_moves, mock_edges]
+        mock_moves.get_item.side_effect = [{"Item": SAMPLE_MOVE_A}, {}]
+        resp = moves_handler.put_edge(_edge_event("move-a", "ghost-b", groups=["curators"]), None)
+        self.assertEqual(resp["statusCode"], 404)
+
+    def test_put_edge_self_loop(self):
+        """A move cannot be its own prerequisite."""
+        # _would_create_cycle catches from == to before any DynamoDB call
+        with patch("boto3.resource") as mock_resource:
+            mock_moves = MagicMock()
+            mock_edges = MagicMock()
+            mock_resource.return_value.Table.side_effect = [mock_moves, mock_edges]
+            mock_moves.get_item.side_effect = [{"Item": SAMPLE_MOVE_A}, {"Item": SAMPLE_MOVE_A}]
+            resp = moves_handler.put_edge(_edge_event("move-a", "move-a", groups=["curators"]), None)
+        self.assertEqual(resp["statusCode"], 409)
+
+    @patch("boto3.resource")
+    def test_put_edge_cycle_detection(self, mock_resource):
+        """A → B already exists; adding B → A must be rejected."""
+        mock_moves = MagicMock()
+        mock_edges = MagicMock()
+        mock_resource.return_value.Table.side_effect = [mock_moves, mock_edges]
+        mock_moves.get_item.side_effect = [{"Item": SAMPLE_MOVE_B}, {"Item": SAMPLE_MOVE_A}]
+        # BFS from move-a sees outgoing edge to move-b
+        mock_edges.query.return_value = {"Items": [SAMPLE_EDGE]}
+
+        resp = moves_handler.put_edge(_edge_event("move-b", "move-a", groups=["curators"]), None)
+
+        self.assertEqual(resp["statusCode"], 409)
+        body = json.loads(resp["body"])
+        self.assertIn("cycle", body["error"].lower())
+
+
+# ── delete_edge ───────────────────────────────────────────────────────────────
+
+class TestDeleteEdge(unittest.TestCase):
+    def setUp(self):
+        moves_handler._table = None
+        moves_handler._dynamodb = None
+        moves_handler._edges_table = None
+
+    @patch("boto3.resource")
+    def test_delete_edge_success(self, mock_resource):
+        mock_edges = MagicMock()
+        mock_resource.return_value.Table.return_value = mock_edges
+        mock_edges.get_item.return_value = {"Item": SAMPLE_EDGE}
+        mock_edges.delete_item.return_value = {}
+
+        resp = moves_handler.delete_edge(_edge_event("move-a", "move-b", groups=["curators"]), None)
+
+        self.assertEqual(resp["statusCode"], 200)
+        body = json.loads(resp["body"])
+        self.assertIn("removed", body["message"])
+        mock_edges.delete_item.assert_called_once_with(
+            Key={"fromMoveId": "move-a", "toMoveId": "move-b"}
+        )
+
+    @patch("boto3.resource")
+    def test_delete_edge_not_found(self, mock_resource):
+        mock_edges = MagicMock()
+        mock_resource.return_value.Table.return_value = mock_edges
+        mock_edges.get_item.return_value = {}
+
+        resp = moves_handler.delete_edge(_edge_event("move-a", "ghost-b", groups=["admins"]), None)
+
+        self.assertEqual(resp["statusCode"], 404)
+
+    def test_delete_edge_forbidden_no_group(self):
+        resp = moves_handler.delete_edge(_edge_event("move-a", "move-b", groups=[]), None)
+        self.assertEqual(resp["statusCode"], 403)
+
+    def test_delete_edge_forbidden_contributor(self):
+        resp = moves_handler.delete_edge(_edge_event("move-a", "move-b", groups=["contributors"]), None)
+        self.assertEqual(resp["statusCode"], 403)
+
+    def test_delete_edge_missing_params(self):
+        event = {"pathParameters": {"id": "move-a"}}
+        event.update(_claims_context(["curators"]))
+        resp = moves_handler.delete_edge(event, None)
+        self.assertEqual(resp["statusCode"], 400)
+
+    def test_delete_edge_missing_id(self):
+        event = {"pathParameters": None}
+        event.update(_claims_context(["curators"]))
+        resp = moves_handler.delete_edge(event, None)
+        self.assertEqual(resp["statusCode"], 400)
+
+
+# ── Router — new edge routes ──────────────────────────────────────────────────
+
+class TestMovesRouterEdgeRoutes(unittest.TestCase):
+    def setUp(self):
+        moves_handler._table = None
+        moves_handler._dynamodb = None
+        moves_handler._edges_table = None
+
+    @patch.object(moves_handler, "get_prerequisites")
+    def test_router_get_prerequisites(self, mock_handler):
+        mock_handler.return_value = {"statusCode": 200, "body": "{}"}
+        event = {"path": "/moves/abc/prerequisites", "httpMethod": "GET"}
+        moves_handler.router(event, None)
+        mock_handler.assert_called_once()
+
+    @patch.object(moves_handler, "get_next")
+    def test_router_get_next(self, mock_handler):
+        mock_handler.return_value = {"statusCode": 200, "body": "{}"}
+        event = {"path": "/moves/abc/next", "httpMethod": "GET"}
+        moves_handler.router(event, None)
+        mock_handler.assert_called_once()
+
+    @patch.object(moves_handler, "put_edge")
+    def test_router_put_edge(self, mock_handler):
+        mock_handler.return_value = {"statusCode": 201, "body": "{}"}
+        event = {"path": "/moves/abc/next/xyz", "httpMethod": "PUT"}
+        moves_handler.router(event, None)
+        mock_handler.assert_called_once()
+
+    @patch.object(moves_handler, "delete_edge")
+    def test_router_delete_edge(self, mock_handler):
+        mock_handler.return_value = {"statusCode": 200, "body": "{}"}
+        event = {"path": "/moves/abc/next/xyz", "httpMethod": "DELETE"}
+        moves_handler.router(event, None)
+        mock_handler.assert_called_once()
+
+    def test_router_options_returns_200(self):
+        resp = moves_handler.router({"path": "/moves/abc/next", "httpMethod": "OPTIONS"}, None)
+        self.assertEqual(resp["statusCode"], 200)
+
+
 if __name__ == "__main__":
     unittest.main()
