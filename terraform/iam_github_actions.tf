@@ -164,6 +164,7 @@ resource "aws_iam_policy" "github_actions_deploy" {
         Sid    = "CognitoManagement"
         Effect = "Allow"
         Action = [
+          "cognito-idp:AddCustomAttributes",
           "cognito-idp:CreateGroup",
           "cognito-idp:CreateUserPool",
           "cognito-idp:CreateUserPoolClient",
