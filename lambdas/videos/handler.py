@@ -117,26 +117,21 @@ def record_view(event, context):
 
     table = _get_moves_table()
 
-    # Verify the move exists before incrementing
-    try:
-        result = table.get_item(Key={"moveId": move_id})
-    except ClientError as exc:
-        logger.error("record_view: DynamoDB error for move_id=%s — %s", move_id, exc)
-        return _log_response(_error(500, "Failed to retrieve move"))
-
-    if not result.get("Item"):
-        logger.warning("record_view: move_id=%s not found", move_id)
-        return _log_response(_not_found(f"Move '{move_id}' not found"))
-
-    # Atomically increment viewCount using ADD (safe under concurrent requests)
+    # Atomically increment viewCount using ADD, conditioned on the move existing.
+    # This avoids a separate get_item round-trip and eliminates the TOCTOU race.
     try:
         updated = table.update_item(
             Key={"moveId": move_id},
             UpdateExpression="ADD viewCount :one",
+            ConditionExpression="attribute_exists(moveId)",
             ExpressionAttributeValues={":one": 1},
             ReturnValues="ALL_NEW",
         )
     except ClientError as exc:
+        error_code = exc.response.get("Error", {}).get("Code", "")
+        if error_code == "ConditionalCheckFailedException":
+            logger.warning("record_view: move_id=%s not found", move_id)
+            return _log_response(_not_found(f"Move '{move_id}' not found"))
         logger.error("record_view: DynamoDB update error for move_id=%s — %s", move_id, exc)
         return _log_response(_error(500, "Failed to record view"))
 
