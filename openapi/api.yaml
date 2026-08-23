@@ -196,6 +196,12 @@ components:
             type: string
           description: Alternative names or aliases for the move
           example: [Star Pose, Side Star]
+        viewCount:
+          type: integer
+          minimum: 0
+          readOnly: true
+          description: Number of times the video for this move has been viewed
+          example: 42
         createdAt:
           type: string
           format: date-time
@@ -284,6 +290,19 @@ components:
           example: 3600
         moveId:
           type: string
+
+    ViewResponse:
+      type: object
+      properties:
+        moveId:
+          type: string
+          format: uuid
+          description: ID of the move whose view count was incremented
+        viewCount:
+          type: integer
+          minimum: 0
+          description: Updated view count after this view was recorded
+          example: 43
 
     UploadUrlResponse:
       type: object
@@ -668,6 +687,14 @@ paths:
       tags: [Moves]
       security:
         - CognitoAuth: []
+      parameters:
+        - in: query
+          name: sortBy
+          schema:
+            type: string
+            enum: [views]
+          required: false
+          description: Sort moves by the specified field. Use `views` to order by view count descending.
       responses:
         "200":
           description: List of moves
@@ -845,6 +872,41 @@ paths:
                 $ref: "#/components/schemas/ErrorResponse"
         "404":
           description: Move or video not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /videos/{moveId}/view:
+    parameters:
+      - in: path
+        name: moveId
+        required: true
+        schema:
+          type: string
+        description: Move ID whose view count should be incremented
+
+    post:
+      summary: Record a view for a move's video
+      operationId: recordView
+      tags: [Videos]
+      security:
+        - CognitoAuth: []
+      responses:
+        "200":
+          description: View recorded; returns updated view count
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ViewResponse"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Move not found
           content:
             application/json:
               schema:
