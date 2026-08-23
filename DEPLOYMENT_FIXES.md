@@ -166,4 +166,3 @@ terraform apply -var="environment=prod"
 4. ✅ `terraform/api_gateway.tf` - Already had correct format attribute
 
 All fixes have been applied and validated.
-
