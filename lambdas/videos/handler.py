@@ -107,6 +107,39 @@ UPLOAD_GROUPS = {"contributors", "curators", "admins"}
 
 # ── Handlers ─────────────────────────────────────────────────────────────────
 
+def record_view(event, context):
+    """POST /videos/{moveId}/view — atomically increment the view count for a move."""
+    move_id = (event.get("pathParameters") or {}).get("moveId")
+    logger.info("record_view called: move_id=%s", move_id)
+    if not move_id:
+        logger.warning("record_view: missing moveId path parameter")
+        return _log_response(_bad_request("moveId path parameter is required"))
+
+    table = _get_moves_table()
+
+    # Atomically increment viewCount using ADD, conditioned on the move existing.
+    # This avoids a separate get_item round-trip and eliminates the TOCTOU race.
+    try:
+        updated = table.update_item(
+            Key={"moveId": move_id},
+            UpdateExpression="ADD viewCount :one",
+            ConditionExpression="attribute_exists(moveId)",
+            ExpressionAttributeValues={":one": 1},
+            ReturnValues="ALL_NEW",
+        )
+    except ClientError as exc:
+        error_code = exc.response.get("Error", {}).get("Code", "")
+        if error_code == "ConditionalCheckFailedException":
+            logger.warning("record_view: move_id=%s not found", move_id)
+            return _log_response(_not_found(f"Move '{move_id}' not found"))
+        logger.error("record_view: DynamoDB update error for move_id=%s — %s", move_id, exc)
+        return _log_response(_error(500, "Failed to record view"))
+
+    view_count = int(updated.get("Attributes", {}).get("viewCount", 0))
+    logger.info("record_view: move_id=%s viewCount=%d", move_id, view_count)
+    return _log_response(_ok({"moveId": move_id, "viewCount": view_count}))
+
+
 def get_video_url(event, context):
     """GET /videos/{moveId}/url — generate a pre-signed URL for viewing a video."""
     move_id = (event.get("pathParameters") or {}).get("moveId")
@@ -231,6 +264,8 @@ def router(event, context):
     # Route based on path and method
     if path.startswith("/videos/") and path.endswith("/url") and method == "GET":
         return get_video_url(event, context)
+    elif path.startswith("/videos/") and path.endswith("/view") and method == "POST":
+        return record_view(event, context)
     elif path.startswith("/videos/") and path.endswith("/upload-url") and method == "POST":
         return get_upload_url(event, context)
     elif method == "OPTIONS":

@@ -119,8 +119,10 @@ EDIT_DELETE_GROUPS = {"curators", "admins"}
 # ── Handlers ─────────────────────────────────────────────────────────────────
 
 def list_moves(event, context):
-    """GET /moves — return all moves."""
-    logger.info("list_moves called")
+    """GET /moves — return all moves, optionally sorted."""
+    params = event.get("queryStringParameters") or {}
+    sort_by = params.get("sortBy", "")
+    logger.info("list_moves called: sortBy=%s", sort_by)
     table = _get_table()
     try:
         result = table.scan()
@@ -139,6 +141,9 @@ def list_moves(event, context):
             break
 
     logger.info("list_moves: returning %d move(s)", len(items))
+    if sort_by == "views":
+        items.sort(key=lambda m: int(m.get("viewCount", 0)), reverse=True)
+        logger.info("list_moves: sorted by viewCount descending")
     return _log_response(_ok({"moves": items, "count": len(items)}))
 
 
@@ -207,6 +212,7 @@ def create_move(event, context):
         "videoKey": body.get("videoKey", ""),
         "tags": body.get("tags", []),
         "alternateNames": body.get("alternateNames", []),
+        "viewCount": 0,
         "createdAt": now,
         "updatedAt": now,
     }
