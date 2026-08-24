@@ -1031,7 +1031,7 @@ resource "aws_api_gateway_integration_response" "videos_view_options" {
 
   response_parameters = {
     "method.response.header.Access-Control-Allow-Headers" = "'Content-Type,Authorization'"
-    "method.response.header.Access-Control-Allow-Methods" = "'OPTIONS,POST'"
+    "method.response.header.Access-Control-Allow-Methods" = "'OPTIONS,GET,POST,PUT,PATCH,DELETE'"
     "method.response.header.Access-Control-Allow-Origin"  = "'*'"
   }
 }

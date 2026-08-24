@@ -313,5 +313,46 @@ class TestVideosLogging(unittest.TestCase):
         self.assertIn("Returning status 200", messages)
 
 
+# ── CORS preflight ────────────────────────────────────────────────────────────
+
+EXPECTED_ALLOW_METHODS = "OPTIONS,GET,POST,PUT,PATCH,DELETE"
+
+
+class TestVideosCors(unittest.TestCase):
+    """Verify CORS preflight responses include the correct headers."""
+
+    def _options_event(self, path: str) -> dict:
+        return {"path": path, "httpMethod": "OPTIONS", "pathParameters": {"moveId": "move-abc"}}
+
+    def test_options_view_returns_200(self):
+        resp = videos_handler.router(self._options_event("/videos/move-abc/view"), None)
+        self.assertEqual(resp["statusCode"], 200)
+
+    def test_options_view_allow_methods_superset(self):
+        resp = videos_handler.router(self._options_event("/videos/move-abc/view"), None)
+        allow_methods = resp["headers"].get("Access-Control-Allow-Methods", "")
+        self.assertEqual(allow_methods, EXPECTED_ALLOW_METHODS)
+
+    def test_options_view_allow_origin(self):
+        resp = videos_handler.router(self._options_event("/videos/move-abc/view"), None)
+        self.assertEqual(resp["headers"].get("Access-Control-Allow-Origin"), "*")
+
+    def test_options_view_allow_headers(self):
+        resp = videos_handler.router(self._options_event("/videos/move-abc/view"), None)
+        self.assertEqual(resp["headers"].get("Access-Control-Allow-Headers"), "Content-Type,Authorization")
+
+    def test_record_view_cors_headers_present(self):
+        """Non-preflight responses also carry CORS headers so Lambda-proxy responses are valid."""
+        with patch("boto3.resource") as mock_resource:
+            mock_table = MagicMock()
+            mock_resource.return_value.Table.return_value = mock_table
+            mock_table.update_item.return_value = {"Attributes": {"moveId": "move-abc", "viewCount": 1}}
+            videos_handler._moves_table = None
+            videos_handler._dynamodb = None
+            event = {"path": "/videos/move-abc/view", "httpMethod": "POST", "pathParameters": {"moveId": "move-abc"}}
+            resp = videos_handler.record_view(event, None)
+        self.assertEqual(resp["headers"].get("Access-Control-Allow-Methods"), EXPECTED_ALLOW_METHODS)
+
+
 if __name__ == "__main__":
     unittest.main()
