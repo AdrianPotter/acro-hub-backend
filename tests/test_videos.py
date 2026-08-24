@@ -356,3 +356,75 @@ class TestVideosCors(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+# ── get_view_count ────────────────────────────────────────────────────────────
+
+class TestGetViewCount(unittest.TestCase):
+    def setUp(self):
+        videos_handler._moves_table = None
+        videos_handler._dynamodb = None
+
+    @patch("boto3.resource")
+    def test_get_view_count_success(self, mock_resource):
+        import decimal
+        mock_table = MagicMock()
+        mock_resource.return_value.Table.return_value = mock_table
+        mock_table.get_item.return_value = {"Item": {**SAMPLE_MOVE, "viewCount": decimal.Decimal("5")}}
+
+        resp = videos_handler.get_view_count(_move_id_event("move-abc"), None)
+
+        self.assertEqual(resp["statusCode"], 200)
+        body = json.loads(resp["body"])
+        self.assertEqual(body["moveId"], "move-abc")
+        self.assertEqual(body["viewCount"], 5)
+
+    @patch("boto3.resource")
+    def test_get_view_count_not_found(self, mock_resource):
+        mock_table = MagicMock()
+        mock_resource.return_value.Table.return_value = mock_table
+        mock_table.get_item.return_value = {}
+
+        resp = videos_handler.get_view_count(_move_id_event("missing"), None)
+
+        self.assertEqual(resp["statusCode"], 404)
+
+    def test_get_view_count_missing_move_id(self):
+        resp = videos_handler.get_view_count({"pathParameters": None}, None)
+        self.assertEqual(resp["statusCode"], 400)
+
+    @patch("boto3.resource")
+    def test_get_view_count_defaults_to_zero(self, mock_resource):
+        mock_table = MagicMock()
+        mock_resource.return_value.Table.return_value = mock_table
+        mock_table.get_item.return_value = {"Item": SAMPLE_MOVE}
+
+        resp = videos_handler.get_view_count(_move_id_event("move-abc"), None)
+
+        self.assertEqual(resp["statusCode"], 200)
+        body = json.loads(resp["body"])
+        self.assertEqual(body["viewCount"], 0)
+
+    @patch("boto3.resource")
+    def test_router_get_view_dispatches_to_get_view_count(self, mock_resource):
+        mock_table = MagicMock()
+        mock_resource.return_value.Table.return_value = mock_table
+        mock_table.get_item.return_value = {"Item": {**SAMPLE_MOVE, "viewCount": 3}}
+
+        event = {"path": "/videos/move-abc/view", "httpMethod": "GET", "pathParameters": {"moveId": "move-abc"}}
+        resp = videos_handler.router(event, None)
+
+        self.assertEqual(resp["statusCode"], 200)
+        body = json.loads(resp["body"])
+        self.assertEqual(body["viewCount"], 3)
+
+
+# ── _DecimalEncoder (videos) ──────────────────────────────────────────────────
+
+class TestVideosDecimalEncoder(unittest.TestCase):
+    def test_integer_decimal_serialised_as_int(self):
+        import decimal
+        body = {"viewCount": decimal.Decimal("10")}
+        result = json.loads(json.dumps(body, cls=videos_handler._DecimalEncoder))
+        self.assertEqual(result["viewCount"], 10)
+        self.assertIsInstance(result["viewCount"], int)

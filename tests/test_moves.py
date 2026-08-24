@@ -479,3 +479,38 @@ class TestMovesLogging(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+# ── _DecimalEncoder ───────────────────────────────────────────────────────────
+
+class TestDecimalEncoder(unittest.TestCase):
+    """Verify that Decimal values in move items are JSON-serialisable."""
+
+    def test_integer_decimal_serialised_as_int(self):
+        import decimal
+        body = {"viewCount": decimal.Decimal("42")}
+        result = json.loads(json.dumps(body, cls=moves_handler._DecimalEncoder))
+        self.assertEqual(result["viewCount"], 42)
+        self.assertIsInstance(result["viewCount"], int)
+
+    def test_fractional_decimal_serialised_as_float(self):
+        import decimal
+        body = {"rating": decimal.Decimal("4.5")}
+        result = json.loads(json.dumps(body, cls=moves_handler._DecimalEncoder))
+        self.assertAlmostEqual(result["rating"], 4.5)
+
+    @patch("boto3.resource")
+    def test_get_move_with_decimal_view_count_returns_200(self, mock_resource):
+        import decimal
+        mock_table = MagicMock()
+        mock_resource.return_value.Table.return_value = mock_table
+        move_with_decimal = {**SAMPLE_MOVE, "viewCount": decimal.Decimal("7")}
+        mock_table.get_item.return_value = {"Item": move_with_decimal}
+        moves_handler._table = None
+        moves_handler._dynamodb = None
+
+        resp = moves_handler.get_move({"pathParameters": {"id": "move-123"}}, None)
+
+        self.assertEqual(resp["statusCode"], 200)
+        body = json.loads(resp["body"])
+        self.assertEqual(body["viewCount"], 7)
