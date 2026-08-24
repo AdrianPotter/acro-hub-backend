@@ -2,6 +2,7 @@
 Acro Hub — Moves Lambda
 CRUD operations for acrobatic move metadata stored in DynamoDB.
 """
+import decimal
 import json
 import logging
 import os
@@ -38,23 +39,30 @@ CORS_HEADERS = {
     "Content-Type": "application/json",
 }
 
+class _DecimalEncoder(json.JSONEncoder):
+    def default(self, obj):
+        if isinstance(obj, decimal.Decimal):
+            return int(obj) if obj % 1 == 0 else float(obj)
+        return super().default(obj)
+
+
 VALID_DIFFICULTIES = {"easy", "medium", "hard", "expert"}
 VALID_CATEGORIES = {"acrobalance", "hand-to-hand", "icarian", "washing-machine"}
 
 
 def _ok(body: dict) -> dict:
-    return {"statusCode": 200, "headers": CORS_HEADERS, "body": json.dumps(body)}
+    return {"statusCode": 200, "headers": CORS_HEADERS, "body": json.dumps(body, cls=_DecimalEncoder)}
 
 
 def _created(body: dict) -> dict:
-    return {"statusCode": 201, "headers": CORS_HEADERS, "body": json.dumps(body)}
+    return {"statusCode": 201, "headers": CORS_HEADERS, "body": json.dumps(body, cls=_DecimalEncoder)}
 
 
 def _bad_request(message: str) -> dict:
     return {
         "statusCode": 400,
         "headers": CORS_HEADERS,
-        "body": json.dumps({"error": message}),
+        "body": json.dumps({"error": message}, cls=_DecimalEncoder),
     }
 
 
@@ -62,7 +70,7 @@ def _not_found(message: str = "Move not found") -> dict:
     return {
         "statusCode": 404,
         "headers": CORS_HEADERS,
-        "body": json.dumps({"error": message}),
+        "body": json.dumps({"error": message}, cls=_DecimalEncoder),
     }
 
 
@@ -70,7 +78,7 @@ def _error(status: int, message: str) -> dict:
     return {
         "statusCode": status,
         "headers": CORS_HEADERS,
-        "body": json.dumps({"error": message}),
+        "body": json.dumps({"error": message}, cls=_DecimalEncoder),
     }
 
 
@@ -108,7 +116,7 @@ def _forbidden(message: str = "You do not have permission to perform this action
     return {
         "statusCode": 403,
         "headers": CORS_HEADERS,
-        "body": json.dumps({"error": message}),
+        "body": json.dumps({"error": message}, cls=_DecimalEncoder),
     }
 
 

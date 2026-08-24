@@ -2,6 +2,7 @@
 Acro Hub — Videos Lambda
 Generates pre-signed S3 URLs for secure video streaming and uploads.
 """
+import decimal
 import json
 import logging
 import os
@@ -48,14 +49,14 @@ CORS_HEADERS = {
 
 
 def _ok(body: dict) -> dict:
-    return {"statusCode": 200, "headers": CORS_HEADERS, "body": json.dumps(body)}
+    return {"statusCode": 200, "headers": CORS_HEADERS, "body": json.dumps(body, cls=_DecimalEncoder)}
 
 
 def _bad_request(message: str) -> dict:
     return {
         "statusCode": 400,
         "headers": CORS_HEADERS,
-        "body": json.dumps({"error": message}),
+        "body": json.dumps({"error": message}, cls=_DecimalEncoder),
     }
 
 
@@ -63,7 +64,7 @@ def _not_found(message: str = "Move not found") -> dict:
     return {
         "statusCode": 404,
         "headers": CORS_HEADERS,
-        "body": json.dumps({"error": message}),
+        "body": json.dumps({"error": message}, cls=_DecimalEncoder),
     }
 
 
@@ -71,7 +72,7 @@ def _error(status: int, message: str) -> dict:
     return {
         "statusCode": status,
         "headers": CORS_HEADERS,
-        "body": json.dumps({"error": message}),
+        "body": json.dumps({"error": message}, cls=_DecimalEncoder),
     }
 
 
@@ -98,8 +99,15 @@ def _forbidden(message: str = "You do not have permission to perform this action
     return {
         "statusCode": 403,
         "headers": CORS_HEADERS,
-        "body": json.dumps({"error": message}),
+        "body": json.dumps({"error": message}, cls=_DecimalEncoder),
     }
+
+
+class _DecimalEncoder(json.JSONEncoder):
+    def default(self, obj):
+        if isinstance(obj, decimal.Decimal):
+            return int(obj) if obj % 1 == 0 else float(obj)
+        return super().default(obj)
 
 
 UPLOAD_GROUPS = {"contributors", "curators", "admins"}
@@ -252,6 +260,31 @@ def get_upload_url(event, context):
     )
 
 
+def get_view_count(event, context):
+    """GET /videos/{moveId}/view — return the current view count for a move."""
+    move_id = (event.get("pathParameters") or {}).get("moveId")
+    logger.info("get_view_count called: move_id=%s", move_id)
+    if not move_id:
+        logger.warning("get_view_count: missing moveId path parameter")
+        return _log_response(_bad_request("moveId path parameter is required"))
+
+    table = _get_moves_table()
+    try:
+        result = table.get_item(Key={"moveId": move_id})
+    except ClientError as exc:
+        logger.error("get_view_count: DynamoDB error for move_id=%s — %s", move_id, exc)
+        return _log_response(_error(500, "Failed to retrieve move"))
+
+    item = result.get("Item")
+    if not item:
+        logger.warning("get_view_count: move_id=%s not found", move_id)
+        return _log_response(_not_found(f"Move '{move_id}' not found"))
+
+    view_count = int(item.get("viewCount", 0))
+    logger.info("get_view_count: move_id=%s viewCount=%d", move_id, view_count)
+    return _log_response(_ok({"moveId": move_id, "viewCount": view_count}))
+
+
 # ── Router ───────────────────────────────────────────────────────────────────
 
 def router(event, context):
@@ -264,6 +297,8 @@ def router(event, context):
     # Route based on path and method
     if path.startswith("/videos/") and path.endswith("/url") and method == "GET":
         return get_video_url(event, context)
+    elif path.startswith("/videos/") and path.endswith("/view") and method == "GET":
+        return get_view_count(event, context)
     elif path.startswith("/videos/") and path.endswith("/view") and method == "POST":
         return record_view(event, context)
     elif path.startswith("/videos/") and path.endswith("/upload-url") and method == "POST":

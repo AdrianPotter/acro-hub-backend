@@ -988,6 +988,25 @@ resource "aws_api_gateway_integration" "videos_view_post" {
   uri                     = "arn:aws:apigateway:${var.aws_region}:lambda:path/2015-03-31/functions/${aws_lambda_function.videos.arn}/invocations"
 }
 
+# GET /videos/{moveId}/view
+
+resource "aws_api_gateway_method" "videos_view_get" {
+  rest_api_id   = aws_api_gateway_rest_api.acro_hub.id
+  resource_id   = aws_api_gateway_resource.videos_view.id
+  http_method   = "GET"
+  authorization = "COGNITO_USER_POOLS"
+  authorizer_id = aws_api_gateway_authorizer.cognito.id
+}
+
+resource "aws_api_gateway_integration" "videos_view_get" {
+  rest_api_id             = aws_api_gateway_rest_api.acro_hub.id
+  resource_id             = aws_api_gateway_resource.videos_view.id
+  http_method             = aws_api_gateway_method.videos_view_get.http_method
+  integration_http_method = "POST"
+  type                    = "AWS_PROXY"
+  uri                     = "arn:aws:apigateway:${var.aws_region}:lambda:path/2015-03-31/functions/${aws_lambda_function.videos.arn}/invocations"
+}
+
 # OPTIONS /videos/{moveId}/view (CORS)
 
 resource "aws_api_gateway_method" "videos_view_options" {
@@ -1756,6 +1775,8 @@ resource "aws_api_gateway_deployment" "acro_hub" {
       aws_api_gateway_method.moves_id_delete,
       aws_api_gateway_method.videos_url_get,
       aws_api_gateway_method.videos_upload_post,
+      aws_api_gateway_method.videos_view_post,
+      aws_api_gateway_method.videos_view_get,
       aws_api_gateway_method.events_get,
       aws_api_gateway_method.events_post,
       aws_api_gateway_method.users_get,
