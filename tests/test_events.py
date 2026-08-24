@@ -299,5 +299,34 @@ class TestEventsLogging(unittest.TestCase):
         self.assertIn("userId-timestamp GSI", messages)
 
 
+# ── CORS preflight ────────────────────────────────────────────────────────────
+
+EXPECTED_ALLOW_METHODS = "OPTIONS,GET,POST,PUT,PATCH,DELETE"
+
+
+class TestEventsCors(unittest.TestCase):
+    """Verify CORS preflight responses include the correct headers."""
+
+    def _options_event(self, path: str) -> dict:
+        return {"path": path, "httpMethod": "OPTIONS", "requestContext": {}}
+
+    def test_options_events_returns_200(self):
+        resp = events_handler.router(self._options_event("/events"), None)
+        self.assertEqual(resp["statusCode"], 200)
+
+    def test_options_events_allow_methods_superset(self):
+        resp = events_handler.router(self._options_event("/events"), None)
+        allow_methods = resp["headers"].get("Access-Control-Allow-Methods", "")
+        self.assertEqual(allow_methods, EXPECTED_ALLOW_METHODS)
+
+    def test_options_events_allow_origin(self):
+        resp = events_handler.router(self._options_event("/events"), None)
+        self.assertEqual(resp["headers"].get("Access-Control-Allow-Origin"), "*")
+
+    def test_options_events_allow_headers(self):
+        resp = events_handler.router(self._options_event("/events"), None)
+        self.assertEqual(resp["headers"].get("Access-Control-Allow-Headers"), "Content-Type,Authorization")
+
+
 if __name__ == "__main__":
     unittest.main()
